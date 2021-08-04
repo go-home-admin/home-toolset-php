@@ -4,8 +4,47 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "11dc6953563acacc3c6a21fa5f1059a2",
+    "content-hash": "e436fa8cf6b437497013d73dc9d0c2c6",
     "packages": [
+        {
+            "name": "ctfang/proto-parser",
+            "version": "v0.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ctfang/proto-parser.git",
+                "reference": "b802bfb994848e677ccaf46c5c90eceb8def57f0"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/ctfang/proto-parser/zipball/b802bfb994848e677ccaf46c5c90eceb8def57f0",
+                "reference": "b802bfb994848e677ccaf46c5c90eceb8def57f0",
+                "shasum": "",
+                "mirrors": [
+                    {
+                        "url": "https://mirrors.aliyun.com/composer/dists/%package%/%reference%.%type%",
+                        "preferred": true
+                    }
+                ]
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "ProtoParser\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "authors": [
+                {
+                    "name": "ctfang",
+                    "email": "2206582181@qq.com"
+                }
+            ],
+            "support": {
+                "issues": "https://github.com/ctfang/proto-parser/issues",
+                "source": "https://github.com/ctfang/proto-parser/tree/v0.0.1"
+            },
+            "time": "2021-08-04T09:50:43+00:00"
+        },
         {
             "name": "psr/container",
             "version": "1.1.1",

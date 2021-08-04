@@ -1,5 +1,23 @@
 #!/usr/bin/env php
 <?php
 
+require_once "vendor/autoload.php";
 
-require_once "";
+use App\Commands\BeanCommand;
+use App\Commands\SwaggerCommand;
+use Symfony\Component\Console\Application;
+
+define("ALL_PROJECT", dirname(__DIR__));
+
+$application = new Application("Home Admin ToolSet", "v0.0.1");
+
+$application->addCommands([
+    new BeanCommand(),
+    new SwaggerCommand(),
+]);
+
+try {
+    $application->run();
+} catch (Exception $e) {
+    var_dump($e);
+}
