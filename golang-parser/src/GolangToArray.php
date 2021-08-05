@@ -3,7 +3,10 @@
 
 namespace GoLang\Parser;
 
-
+/**
+ * 分词, 去除无效字符(多个空格等)
+ * @package GoLang\Parser
+ */
 class GolangToArray
 {
     const onNew = 'onNew';
@@ -18,15 +21,20 @@ class GolangToArray
 
     public $file;
 
-    public function __construct(string $file)
+    public function __construct(string $file, string $content = '')
     {
-        $this->file = realpath($file);
-        $content    = file_get_contents($this->file);
+        if ($file) {
+            $this->file = realpath($file);
+            $content    = file_get_contents($this->file);
+        }
 
         $word = '';
 
         $onState   = self::onNew;
         $allStrArr = $this->mbSplit($content);
+
+        $onStrStateCache = '';
+        $onStrStateCount = 0;
 
         for ($offset = 0; $offset < count($allStrArr); $offset++) {
             $char = $allStrArr[$offset];
@@ -37,7 +45,7 @@ class GolangToArray
                         // 进入注释
                         $word    .= $char;
                         $onState = self::onDoc;
-                    } elseif ($this->checkStr($allStrArr, $offset)) {
+                    } elseif ($this->checkStr($allStrArr, $offset, $onStrStateCache, $onStrStateCount)) {
                         // 进入字符串解析
                         $word    .= $char;
                         $onState = self::onStr;
@@ -70,7 +78,7 @@ class GolangToArray
                     }
                     break;
                 case self::onStr:
-                    if ($char == '"' && $allStrArr[$offset - 1] != '\\') {
+                    if ($this->checkStr($allStrArr, $offset, $onStrStateCache, $onStrStateCount)) {
                         $this->array[] = trim($word.$char);
                         $word          = '';
                         $onState       = self::onNew;
@@ -80,6 +88,12 @@ class GolangToArray
                     break;
                 default:
                     break;
+            }
+        }
+
+        if ($onState == self::onNew) {
+            if ($word != "") {
+                $this->array[] = trim($word);
             }
         }
     }
@@ -93,19 +107,46 @@ class GolangToArray
         return false;
     }
 
-    public function checkStr(array $allStrArr, int $offset): bool
+    public function checkStr(array $allStrArr, int $offset, &$onStrStateCache, &$onStrStateCount): bool
     {
-        if ($allStrArr[$offset] == '"') {
-            return true;
+        $ok = false;
+        switch ($allStrArr[$offset]) {
+            case '"':
+                break;
+            case '`':
+                $ok = true;
+                break;
+        }
+
+        if ($ok) {
+            if ($onStrStateCount == 0) {
+                $onStrStateCount++;
+                $onStrStateCache = $allStrArr[$offset];
+                return true;
+            }
+            if ($onStrStateCache == $allStrArr[$offset]) {
+                $onStrStateCount--;
+                if ( $onStrStateCount<=0 ) {
+                    $onStrStateCache = '';
+                    return true;
+                }
+            }
         }
 
         return false;
     }
 
-    protected function mbSplit($string): ?array
+    protected function mbSplit($string, $len = 1): ?array
     {
-        // /u表示把字符串当作utf-8处理，并把字符串开始和结束之前所有的字符串分割成数组
-        return preg_split('/(?<!^)(?!$)/u', $string);
+        $array  = [];
+        $start  = 0;
+        $strLen = mb_strlen($string);
+        while ($strLen) {
+            $array[] = mb_substr($string, $start, $len, "utf8");
+            $string  = mb_substr($string, $len, $strLen, "utf8");
+            $strLen  = mb_strlen($string);
+        }
+        return $array;
     }
 
     public function getArray(): array

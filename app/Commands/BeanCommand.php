@@ -4,6 +4,8 @@
 namespace App\Commands;
 
 
+use GoLang\Parser\Generate\GoLangFile;
+use GoLang\Parser\Generate\GoLangFunc;
 use GoLang\Parser\GolangParser;
 use GoLang\Parser\GolangToArray;
 use ProtoParser\DirsHelp;
@@ -30,17 +32,48 @@ class BeanCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $dir = ALL_PROJECT."/home-admin";
-        foreach (DirsHelp::getDirs($dir, 'go') as $file) {
-            $goArr    = new GolangToArray($file);
-            $goParser = new GolangParser();
-            $golang   = $goParser->parser($goArr);
+        $dirCheck = ALL_PROJECT."/home-admin";
+        $goParser = new GolangParser();
 
-            var_dump($golang);
-            die;
+        $dirGenerate = [];
+
+        foreach (DirsHelp::getDirs($dirCheck, 'go') as $file) {
+            $dir    = dirname($file);
+            $goArr  = new GolangToArray($file);
+            $golang = $goParser->parser($goArr);
+
+            foreach ($golang->getType() as $type) {
+                $doc = $type->getDoc();
+                if ($doc && $type->isStruct() && strpos($doc, '@Bean')) {
+                    $dirGenerate[$dir][$type->getName()] = [$golang, $type];
+                }
+            }
         }
 
-        $output->writeln("OK");
+        foreach ($dirGenerate as $dir => $item) {
+            $this->toGenerateDirInject($dir, $item);
+        }
+
         return Command::SUCCESS;
+    }
+
+    protected function toGenerateDirInject(string $dir, array $arr)
+    {
+        $genFileName = $dir.'/inject_gen.go';
+        $gen = new GoLangFile($genFileName);
+
+        foreach ($arr as $item) {
+            /**
+             * @var GolangParser $golang
+             * @var \GoLang\Parser\FileParser\Type $type
+             */
+            list($golang, $type) = $item;
+            $gen->setPackage($golang->getPackage());
+
+            $func = new GoLangFunc();
+            $gen->addFunc($func);
+        }
+
+        $gen->push();
     }
 }

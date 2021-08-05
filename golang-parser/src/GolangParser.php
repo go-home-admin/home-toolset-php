@@ -3,22 +3,46 @@
 
 namespace GoLang\Parser;
 
-
 class GolangParser
 {
-    protected $parserObject;
+    protected $file;
+    protected $fileInfo;
 
-    public function __construct()
+    public function parser(GolangToArray $goArray): self
     {
-        $this->parserObject = [
+        $self       = clone $this;
+        $self->file = $goArray->file;
 
-        ];
+        $self->fileInfo = ArrayToFileInfo::toInfo($goArray);
+        return $self;
     }
 
-    public function parser(GolangToArray $goArray, string $file = ''): self
+    /**
+     * @return mixed
+     */
+    public function getFile()
     {
-        $self = clone $this;
+        return $this->file;
+    }
 
-        return $self;
+
+    /**
+     * @return string
+     */
+    public function getPackage(): string
+    {
+        /** @var \GoLang\Parser\FileParser\Package $item */
+        foreach ($this->fileInfo['package']??[] as $item){
+            return $item->getValue();
+        }
+        return 'main';
+    }
+
+    /**
+     * @return \GoLang\Parser\FileParser\Type[]
+     */
+    public function getType(): array
+    {
+        return $this->fileInfo['type'] ?? [];
     }
 }
