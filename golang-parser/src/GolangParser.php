@@ -48,6 +48,29 @@ class GolangParser
     }
 
     /**
+     * @return \GoLang\Parser\FileParser\Func[]
+     */
+    public function getFunc(): array
+    {
+        return $this->fileInfo['func'] ?? [];
+    }
+
+
+    /**
+     * @param  string  $name
+     * @return bool
+     */
+    public function hasFunc(string $name): bool
+    {
+        foreach ($this->getFunc() as $func){
+            if ($name == $func->getName()){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * @return array
      */
     public function getImports(): array

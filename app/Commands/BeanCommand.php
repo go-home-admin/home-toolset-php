@@ -81,7 +81,9 @@ class BeanCommand extends Command
             $gen->setPackage($golang->getPackage());
 
             // 生成服务提供
-            $gen->addFunc($this->getProviderFunc($golang, $type));
+            if (!$golang->hasFunc("New{$type->getName()}Provider")) {
+                $gen->addFunc($this->getProviderFunc($golang, $type));
+            }
 
             // 生成服务初始化
             $gen->addFunc($this->getInitializeFunc($golang, $type));
