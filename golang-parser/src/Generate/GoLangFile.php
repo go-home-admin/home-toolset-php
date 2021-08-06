@@ -6,8 +6,10 @@ class GoLangFile
 {
     protected $file;
     protected $package;
-    protected $func;
-    protected $var;
+    protected $import = [];
+    protected $func = [];
+    protected $var = [];
+    protected $templateCache;
 
     public function __construct(string $file)
     {
@@ -16,7 +18,39 @@ class GoLangFile
 
     public function push()
     {
-        var_dump($this);
+        $goFileContent = $this->getGoTemplate();
+        $goFileContent = str_replace("{package}", $this->getPackage(), $goFileContent);
+
+        $import = '';
+        if ($this->getImport()) {
+            foreach ($this->getImport() as $alias => $str) {
+                $import = "    $alias \"{$str}\"\n";
+            }
+            $import = "import (\n{$import})\n";
+        }
+        $goFileContent = str_replace("{import}", $import, $goFileContent);
+
+        $var = "";
+        foreach ($this->getVar() as $v) {
+            $var .= "\n" . $v->push();
+        }
+        $goFileContent = str_replace("{var}", $var, $goFileContent);
+
+        $func = "";
+        foreach ($this->getFunc() as $fun) {
+            $func .= "\n\n" . $fun->push();
+        }
+        $goFileContent = str_replace("{func}", $func, $goFileContent);
+
+        file_put_contents($this->file, $goFileContent);
+    }
+
+    public function getGoTemplate(): string
+    {
+        if (!$this->templateCache) {
+            $this->templateCache = file_get_contents(__DIR__."/template/go");
+        }
+        return $this->templateCache;
     }
 
     /**
@@ -36,7 +70,7 @@ class GoLangFile
     }
 
     /**
-     * @return array
+     * @return \GoLang\Parser\Generate\GoLangFunc[]
      */
     public function getFunc(): array
     {
@@ -66,5 +100,37 @@ class GoLangFile
     public function addVar($var): void
     {
         $this->var[] = $var;
+    }
+
+    /**
+     * @return string
+     */
+    public function getFile(): string
+    {
+        return $this->file;
+    }
+
+    /**
+     * @param  string  $file
+     */
+    public function setFile(string $file): void
+    {
+        $this->file = $file;
+    }
+
+    /**
+     * @return array
+     */
+    public function getImport(): array
+    {
+        return $this->import;
+    }
+
+    /**
+     * @param  array  $import
+     */
+    public function setImport(array $import): void
+    {
+        $this->import = $import;
     }
 }

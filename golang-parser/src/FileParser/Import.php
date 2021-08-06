@@ -49,11 +49,28 @@ class Import extends FileParser
     {
         $arr = explode(" ", $str);
         if (count($arr) == 1) {
+            $str = trim($str, '"');
             $arr = explode("/", $str);
 
             $this->value[end($arr)] = trim($str, '"');
         } else {
             $this->value[$arr[0]] = trim($arr[1], '"');
         }
+    }
+
+    /**
+     * @return array
+     */
+    public function getValue(): array
+    {
+        return $this->value;
+    }
+
+    /**
+     * @param  array  $value
+     */
+    public function setValue(array $value): void
+    {
+        $this->value = $value;
     }
 }

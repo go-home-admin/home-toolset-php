@@ -16,8 +16,10 @@ class Package extends FileParser
         $this->doc = $doc;
 
         $arr = $this->onStopWithFirstStr($array, $offset, PHP_EOL);
-
-        $this->value = $arr[2];
+        $arr = array_values($arr);
+        if (isset($arr[2])) {
+            $this->value = $arr[2];
+        }
     }
 
     /**

@@ -136,7 +136,7 @@ class Type extends FileParser
     }
 
     /**
-     * @return array
+     * @return Attribute[]
      */
     public function getAttributes(): array
     {
