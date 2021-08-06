@@ -52,4 +52,6 @@ func InitializeNewkernelProvider() *kernel {
 `InitializeNewkernelProvider` 也是由框架层的引导程序初始化, 一般也很少调用, 单元测试用的多。
 
 # 系统地使用
+
+写一个能够半低代码是go框架
 https://github.com/cyz-home/home-admin
