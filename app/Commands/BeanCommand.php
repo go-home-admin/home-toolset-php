@@ -12,6 +12,7 @@ use GoLang\Parser\GolangParser;
 use GoLang\Parser\GolangToArray;
 use ProtoParser\DirsHelp;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -24,6 +25,7 @@ class BeanCommand extends Command
     {
         return $this->setName("make:bean")
             ->setDescription("生成依赖文件")
+            ->addArgument("path", InputArgument::REQUIRED, "编排目录, 这个目录下的所有go文件的bean注释")
             ->setHelp("根据@Bean的注解, 生成依赖定义文件");
     }
 
@@ -34,9 +36,20 @@ class BeanCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $dirCheck = ALL_PROJECT."/home-admin";
-        $goParser = new GolangParser();
+        $dirCheck = $input->getArgument("path");
+        if (!is_dir($dirCheck)) {
+            $dirCheck2 = getcwd() ."/". $dirCheck;
+            if (!is_dir($dirCheck2)) {
+                $output->writeln("<error>{$dirCheck} 目录不存在, 优先绝对路径</error>");
+                $output->writeln("<error>{$dirCheck} 不存在会在工作目录下检查 {$dirCheck2}</error>");
+                return Command::FAILURE;
+            }
+            $dirCheck = realpath($dirCheck2);
+        }else{
+            $dirCheck = realpath($dirCheck);
+        }
 
+        $goParser    = new GolangParser();
         $dirGenerate = [];
         // 收集bean
         foreach (DirsHelp::getDirs($dirCheck, 'go') as $file) {
@@ -56,6 +69,7 @@ class BeanCommand extends Command
             $this->toGenerateDirInject($dir, $item);
         }
 
+        $output->writeln("<info>{$dirCheck} OK</info>");
         return Command::SUCCESS;
     }
 
