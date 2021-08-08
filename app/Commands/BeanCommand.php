@@ -129,14 +129,14 @@ class BeanCommand extends Command
                     $provider = "InitializeNew{$attr->getStruct()}Provider()";
                 }
 
-                $pars .= "\n\t\t\t{$provider},";
+                $pars .= "\n\t\t\t{$provider},\n\t\t";
             }
         }
         $func->setReturns(["*".$type->getName()]);
 
 
         $code .= "\n\tif {$type->getName()}Single == nil {";
-        $code .= "\n\t\t{$type->getName()}Single = New{$type->getName()}Provider({$pars}\n\t\t)\n";
+        $code .= "\n\t\t{$type->getName()}Single = New{$type->getName()}Provider({$pars})\n";
         $code .= "\t}\n";
         $code .= "\n\treturn {$type->getName()}Single\n";
         $func->setCode($code);

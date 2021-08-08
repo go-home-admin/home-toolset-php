@@ -24,9 +24,9 @@ class GoLangFile
         $import = '';
         if ($this->getImport()) {
             foreach ($this->getImport() as $alias => $str) {
-                $import = "    $alias \"{$str}\"\n";
+                $import .= "    $alias \"{$str}\"\n";
             }
-            $import = "import (\n{$import})\n";
+            $import = "\nimport (\n{$import})\n";
         }
         $goFileContent = str_replace("{import}", $import, $goFileContent);
 
