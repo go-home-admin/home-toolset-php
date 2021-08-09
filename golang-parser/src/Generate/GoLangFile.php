@@ -21,28 +21,41 @@ class GoLangFile
         $goFileContent = $this->getGoTemplate();
         $goFileContent = str_replace("{package}", $this->getPackage(), $goFileContent);
 
-        $import = '';
-        if ($this->getImport()) {
-            foreach ($this->getImport() as $alias => $str) {
-                $import .= "    $alias \"{$str}\"\n";
-            }
-            $import = "\nimport (\n{$import})\n";
-        }
+        $import        = $this->genImport();
         $goFileContent = str_replace("{import}", $import, $goFileContent);
 
         $var = "";
         foreach ($this->getVar() as $v) {
-            $var .= "\n" . $v->push();
+            $var .= "\n".$v->push();
         }
         $goFileContent = str_replace("{var}", $var, $goFileContent);
 
         $func = "";
         foreach ($this->getFunc() as $fun) {
-            $func .= "\n\n" . $fun->push();
+            $func .= "\n\n".$fun->push();
         }
         $goFileContent = str_replace("{func}", $func, $goFileContent);
+        $goFileContent = str_replace(['    ', "\n\t\t\n",], ["\t", "\n\n"], $goFileContent);
 
         file_put_contents($this->file, $goFileContent);
+    }
+
+    private function genImport(): string
+    {
+        $import = '';
+        if ($this->getImport()) {
+            foreach ($this->getImport() as $alias => $str) {
+                $arr = explode("/", $str);
+                if (end($arr) == $alias) {
+                    $import .= "    \"{$str}\"\n";
+                } else {
+                    $import .= "    $alias \"{$str}\"\n";
+                }
+            }
+            $import = "\nimport (\n{$import})\n";
+        }
+
+        return $import;
     }
 
     public function getGoTemplate(): string
@@ -131,6 +144,7 @@ class GoLangFile
      */
     public function setImport(array $import): void
     {
+        ksort($import);
         $this->import = $import;
     }
 }
