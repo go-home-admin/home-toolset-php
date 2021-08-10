@@ -4,15 +4,19 @@
 require_once "vendor/autoload.php";
 
 use App\Commands\BeanCommand;
+use App\Commands\ProtocCommand;
 use App\Commands\SwaggerCommand;
 use Symfony\Component\Console\Application;
 
-define("ALL_PROJECT", dirname(__DIR__));
+if (!defined("HOME_PATH")) {
+    define("HOME_PATH", dirname(__DIR__)."/home");
+}
 
 $application = new Application("Home Admin ToolSet", "v0.0.1");
 
 $application->addCommands([
     new BeanCommand(),
+    new ProtocCommand(),
     new SwaggerCommand(),
 ]);
 
