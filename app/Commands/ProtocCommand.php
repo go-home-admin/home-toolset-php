@@ -4,6 +4,7 @@
 namespace App\Commands;
 
 
+use App\Go;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -65,27 +66,12 @@ class ProtocCommand extends Command
             echo($command), "\n";
             system($command);
         }
-        $module = $this->getModule();
+        $module = Go::getModule();
         system("rm -rf {$goOut}");
         rename($tempOut.'/'.$module."/generate/proto", $goOut);
         system("rm -rf {$tempOut}");
 
         return Command::SUCCESS;
-    }
-
-    private function getModule()
-    {
-        $modFile = HOME_PATH."/go.mod";
-        $module  = "";
-        $lines   = file($modFile);
-        foreach ($lines as $line) {
-            $line = rtrim($line);
-            if ($line && strpos($line, 'module ') === 0) {
-                $arr    = explode(" ", $line);
-                $module = end($arr);
-            }
-        }
-        return $module;
     }
 
     private function getProtobufDir($protobuf): array

@@ -1,0 +1,6 @@
+package {package}
+
+// @Bean
+type Controller struct {
+
+}

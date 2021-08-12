@@ -1,0 +1,34 @@
+package {package}
+
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/go-home-admin/home/app/providers"
+	"github.com/go-home-admin/home/bootstrap/http/response"
+	"github.com/go-home-admin/home/generate/proto/{proto_package}"
+)
+
+// {name} {doc}
+func (receiver *Controller) {name}(req *{proto_package}.{req}, ctx *gin.Context) (*{proto_package}.{resp}, error) {
+    // TODO 这里写业务
+	return &{proto_package}.{resp}{}, nil
+}
+
+// GinHandle{name} gin原始路由处理
+// {route_help}
+func (receiver *Controller) GinHandle{name}(ctx *gin.Context) {
+	req := &{proto_package}.{req}{}
+	err := ctx.ShouldBind(req)
+
+	if err != nil {
+		providers.ErrorRequest(ctx, err)
+		return
+	}
+
+	resp, err := receiver.Index(req, ctx)
+	if err != nil {
+		providers.ErrorResponse(ctx, err)
+		return
+	}
+
+	providers.SuccessResponse(ctx, resp)
+}

@@ -8,13 +8,25 @@ use GoLang\Parser\FileParser;
 
 class GoVar extends FileParser
 {
+    protected $value;
+    protected $doc;
+
     public function __construct(array $array, int &$offset, string $doc)
     {
+        $this->doc = $doc;
 
+        $arr = $this->onStopWithFirstStr($array, $offset, PHP_EOL);
+        $arr = array_values($arr);
+        if (isset($arr[2])) {
+            $this->value = $arr[2];
+        }
     }
 
-    public function parser(string $str, string $doc)
+    /**
+     * @return string
+     */
+    public function getValue(): string
     {
-        // TODO: Implement parser() method.
+        return $this->value;
     }
 }

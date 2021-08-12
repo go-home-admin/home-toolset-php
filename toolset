@@ -5,6 +5,7 @@ require_once "vendor/autoload.php";
 
 use App\Commands\BeanCommand;
 use App\Commands\ProtocCommand;
+use App\Commands\RouteCommand;
 use App\Commands\SwaggerCommand;
 use Symfony\Component\Console\Application;
 
@@ -18,6 +19,7 @@ $application->addCommands([
     new BeanCommand(),
     new ProtocCommand(),
     new SwaggerCommand(),
+    new RouteCommand(),
 ]);
 
 try {

@@ -1,0 +1,12 @@
+package routes
+
+import (
+	"github.com/gin-gonic/gin"
+	"gitlab.service.com.int/st.werewolf/lrs-circle-server/bootstrap/http/api"
+	{import}
+)
+
+// {-package-}Routes @bean
+type {-package-}Routes struct {
+	{controllers}
+}

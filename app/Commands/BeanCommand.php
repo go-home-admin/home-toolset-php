@@ -53,6 +53,10 @@ class BeanCommand extends Command
         $dirGenerate = [];
         // 收集bean
         foreach (DirsHelp::getDirs($dirCheck, 'go') as $file) {
+            if (pathinfo($file,PATHINFO_BASENAME) == "z_inject_gen.go"){
+                continue;
+            }
+
             $dir    = dirname($file);
             $goArr  = new GolangToArray($file);
             $golang = $goParser->parser($goArr);
