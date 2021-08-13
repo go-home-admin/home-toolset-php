@@ -58,7 +58,9 @@ class Type extends FileParser
                 $tempAttr = [];
             } else {
                 if ($tempAttr || trim($str)) {
-                    $tempAttr[] = $str;
+                    if (substr($str,0,2)!="//"){
+                        $tempAttr[] = $str;
+                    }
                 }
             }
         }
@@ -78,7 +80,6 @@ class Type extends FileParser
         if ($ok) {
             $attr = new Attribute();
             $attr->setName($tempAttr[0]);
-
             $type = $tempAttr[2];
             if (!$type) {
                 // 注释

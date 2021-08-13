@@ -28,32 +28,51 @@ class Proto
 
     public function makeRouteConfig()
     {
+        $all = [];
         foreach ($this->getRouteDir() as $package => $protoFileArr) {
-            $gen     = new GoLangFile(HOME_PATH."/routes/".$package);
             $imports = [
-                "home-gin" => "github.com/gin-gonic/gin",
-                "home-api" => Go::getModule()."/bootstrap/http/api",
+                "home_gin" => "github.com/gin-gonic/gin",
+                "home_api" => Go::getModule()."/bootstrap/http/api",
             ];
+            $structs = [];
             /** @var ProtoParser $parser */
             foreach ($protoFileArr as $parser) {
                 foreach ($parser->getService()->getArray() as $service) {
                     $serverName = $service->getName();
                     $alias      = StringHelp::toUnderScore($serverName);
-                    $import     = Go::getModule()."/http/{$alias}";
+                    $import     = Go::getModule()."/app/http/{$package}/{$alias}";
+                    $opts       = $service->getOptions();
 
-                    $imports[$alias] = $import;
+                    $structs[$alias]["group"] = ($opts["http.RouteGroup"])->getValue();
+                    $structs[$alias]["name"]  = $serverName;
+                    $imports[$alias]          = $import;
                     // 函数创建
                     foreach ($service->getRpc() as $rpc) {
-                        foreach ($rpc->getOptions() as $type => $option) {
-                            //
+                        foreach ($rpc->getOptions() as $type => $url) {
+                            if (strpos($type, 'http.') === 0) {
+                                $structs[$alias]["url"][] = [
+                                    "method" => substr($type, 5),
+                                    "path"   => $url,
+                                    "rpc"    => $rpc,
+                                ];
+                            }
                         }
                     }
                 }
+                $all[$package] = $structs;
             }
 
-            $gen->setImport($imports);
-            $gen->push();
+            asort($imports);
+            $routeFile = HOME_PATH."/routes/{$package}_gen.go";
+            $outFile   = GenCode::getRouteFile($imports, $package, $structs);
+            $outGroup  = GenCode::getRouteGroup($package, $structs);
+            file_put_contents($routeFile, $outFile.$outGroup);
+            echo "写入路由分组 {$routeFile} ", PHP_EOL;
         }
+
+        $routeFile = HOME_PATH."/routes/all_routes_gen.go";
+        file_put_contents($routeFile, GenCode::getAllRouteGroup($all));
+        echo "跟新路由引用文件 {$routeFile} ", PHP_EOL;
     }
 
     public function makeRoute()

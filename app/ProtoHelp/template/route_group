@@ -1,6 +1,4 @@
 // Get{group}Routes Get{option (http.Route)}Routes
-func (c *{-package-}Routes) Get{group}Routes() map[*api.Config]func(c *gin.Context) {
-	return map[*api.Config]func(c *gin.Context){
-		{route}
-	}
+func (c *{-package-}Routes) Get{group}Routes() map[*home_api.Config]func(c *home_gin.Context) {
+	return map[*home_api.Config]func(c *home_gin.Context){{route}}
 }

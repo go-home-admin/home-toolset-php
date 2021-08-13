@@ -14,6 +14,10 @@ class GenCode
     private static $controller;
 
     private static $action;
+    private static $routeFile;
+    private static $routeGroup;
+
+    private static $allRoutes;
 
     public static function getController(string $package, string $name, string $file): string
     {
@@ -36,7 +40,7 @@ class GenCode
         $doc     = $rpc->getDoc();
 
         $routeHelp = '';
-        foreach ($rpc->getOptions() as $k=>$v){
+        foreach ($rpc->getOptions() as $k => $v) {
             $routeHelp .= "{$k}({$v})";
         }
         return str_replace(
@@ -50,5 +54,113 @@ class GenCode
             ],
             self::$action
         );
+    }
+
+    public static function getRouteFile(array $imports, string $package, array $structs): string
+    {
+        if (!self::$routeFile) {
+            self::$routeFile = file_get_contents(__DIR__.'/template/route');
+        }
+
+        $importStr = $controllers = '';
+        foreach ($imports as $alias => $importPath) {
+            $importStr .= "\n\t{$alias} \"{$importPath}\"";
+        }
+        if ($importStr) {
+            $importStr .= "\n";
+        }
+        foreach ($structs as $alias => $struct) {
+            $controllers .= "\n\t{$alias} *{$alias}.Controller `inject:\"\"`";
+        }
+        if ($controllers) {
+            $controllers .= "\n";
+        }
+
+        return str_replace(
+            [
+                '{import}',
+                '{-package-}',
+                '{controllers}',
+            ],
+            [
+                $importStr,
+                ucfirst($package),
+                $controllers,
+            ],
+            self::$routeFile
+        );
+    }
+
+    public static function getRouteGroup(string $package, array $structs): string
+    {
+        if (!self::$routeGroup) {
+            self::$routeGroup = file_get_contents(__DIR__.'/template/route_group');
+        }
+
+        $groupFunc = [];
+        foreach ($structs as $alias => $struct) {
+            $groupName = ucfirst($struct["group"]);
+
+            if (!isset($groupFunc[$groupName])) {
+                $groupFunc[$groupName] = '';
+            }
+            foreach ($struct["url"] as $item) {
+                /** @var Rpc $rpc */
+                $rpc                   = $item['rpc'];
+                $groupFunc[$groupName] .= "\n\t\thome_api.{$item['method']}(\"{$item['path']}\"): c.{$alias}.GinHandle{$rpc->getName()},";
+            }
+            if ($groupFunc[$groupName]) {
+                $groupFunc[$groupName] .= "\n\t";
+            }
+        }
+        $str    = '';
+        $search = ['{group}', '{-package-}', '{route}'];
+        foreach ($groupFunc as $group => $route) {
+            $func = str_replace($search, [$group, ucfirst($package), $route], self::$routeGroup);
+            $str  .= "\n\n".$func;
+        }
+
+        return $str;
+    }
+
+
+    public static function getAllRouteGroup(array $all): string
+    {
+        if (!self::$allRoutes) {
+            self::$allRoutes = file_get_contents(__DIR__.'/template/all_routes');
+        }
+
+        $controllers = $route = '';
+        $groupFunc = [];
+        foreach ($all as $package => $structs) {
+            $packageUc = ucfirst($package).'Routes';
+            $controllers .= "\n\t{$packageUc} *{$packageUc} `inject:\"\"`";
+            foreach ($structs as $alias => $struct) {
+                $group = $struct["group"];
+                $groupName = ucfirst($group);
+
+                if (!isset($groupFunc[$group])) {
+                    // $groupFunc[$group] = "r.mergerRouteMap(),";
+                    $groupFunc[$group][] = "r.{$packageUc}.Get{$groupName}Routes()";
+                }
+            }
+        }
+        if ($controllers) {
+            $controllers .= "\n";
+        }
+        foreach ($groupFunc as $group=>$arr){
+            $str = 'r.mergerRouteMap(';
+            foreach ($arr as $m){
+                $str .= "\n\t\t\t{$m},";
+            }
+            $str .= "\n\t\t),";
+            $route .= "\n\t\t\"{$group}\": {$str}";
+        }
+        if ($route) {
+            $route .= "\n\t";
+        }
+        $search = ['{controller}', '{group_map}'];
+
+        return str_replace($search, [$controllers, $route], self::$allRoutes);
     }
 }

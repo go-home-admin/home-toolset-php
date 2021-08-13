@@ -144,7 +144,7 @@ class GoLangFile
      */
     public function setImport(array $import): void
     {
-        ksort($import);
+        asort($import);
         $this->import = $import;
     }
 }
