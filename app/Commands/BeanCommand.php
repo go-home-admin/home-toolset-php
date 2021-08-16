@@ -113,6 +113,7 @@ class BeanCommand extends Command
             $gen->addVar($varGen);
         }
 
+        $imports["home_constraint"] = "github.com/go-home-admin/home/bootstrap/constraint";
         $gen->setImport($imports);
         $gen->push();
     }
@@ -141,6 +142,11 @@ class BeanCommand extends Command
 
         $code .= "\n\tif {$type->getName()}Single == nil {";
         $code .= "\n\t\t{$type->getName()}Single = New{$type->getName()}Provider({$pars})\n";
+        $code .= "\n\t\tvar temp interface{} = {$type->getName()}Single";
+        $code .= "\n\t\tconstruct, ok := temp.(home_constraint.Construct)";
+        $code .= "\n\t\tif ok {";
+        $code .= "\n\t\t\tconstruct.Init()";
+        $code .= "\n\t\t}\n";
         $code .= "\t}\n";
         $code .= "\n\treturn {$type->getName()}Single\n";
         $func->setCode($code);
