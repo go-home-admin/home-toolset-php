@@ -149,7 +149,7 @@ class GenCode
             $controllers .= "\n";
         }
         foreach ($groupFunc as $group=>$arr){
-            $str = 'r.mergerRouteMap(';
+            $str = 'route_help.MergerRouteMap(';
             foreach ($arr as $m){
                 $str .= "\n\t\t\t{$m},";
             }
