@@ -40,7 +40,6 @@ class ProtocCommand extends Command
             ->setHelp("拼接protoc命令所需参数");
     }
 
-
     /**
      * @param  \Symfony\Component\Console\Input\InputInterface  $input
      * @param  \Symfony\Component\Console\Output\OutputInterface  $output
@@ -74,7 +73,7 @@ class ProtocCommand extends Command
         return Command::SUCCESS;
     }
 
-    private function getProtobufDir($protobuf): array
+    protected function getProtobufDir($protobuf): array
     {
         $got = [];
         foreach (scandir($protobuf) as $value) {
@@ -110,7 +109,7 @@ class ProtocCommand extends Command
         return $got;
     }
 
-    private function getProtobuf(InputInterface $input)
+    protected function getProtobuf(InputInterface $input)
     {
         $path = $input->getOption("protobuf");
         if (!$path) {
@@ -120,7 +119,7 @@ class ProtocCommand extends Command
         return $this->getHomePath($path);
     }
 
-    private function getProtoPath(InputInterface $input): array
+    protected function getProtoPath(InputInterface $input): array
     {
         $got        = [
             $this->getHomePath('./protobuf'),
@@ -134,7 +133,7 @@ class ProtocCommand extends Command
         return array_values($got);
     }
 
-    private function getGoOut(InputInterface $input): string
+    protected function getGoOut(InputInterface $input): string
     {
         $goOut = $input->getOption("go_out");
         if (!$goOut) {
@@ -144,7 +143,7 @@ class ProtocCommand extends Command
         return $this->getHomePath($goOut, false);
     }
 
-    private function getHomePath(string $path, $mkdir = true)
+    protected function getHomePath(string $path, $mkdir = true)
     {
         $path = HOME_PATH."/".$path;
         $path = str_replace("/./", "/", $path);
@@ -158,7 +157,7 @@ class ProtocCommand extends Command
         return $path;
     }
 
-    private function makeDir(string $path)
+    protected function makeDir(string $path)
     {
         if (!is_dir($path)) {
             echo "mkdir 0755 {$path}\n";
