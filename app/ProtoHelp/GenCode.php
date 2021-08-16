@@ -116,7 +116,7 @@ class GenCode
         $str    = '';
         $search = ['{group}', '{-package-}', '{route}'];
         foreach ($groupFunc as $group => $route) {
-            $func = str_replace($search, [$group, ucfirst($package), $route], self::$routeGroup);
+            $func = str_replace($search, [self::getGroupName($group), ucfirst($package), $route], self::$routeGroup);
             $str  .= "\n\n".$func;
         }
 
@@ -137,7 +137,7 @@ class GenCode
             $controllers .= "\n\t{$packageUc} *{$packageUc} `inject:\"\"`";
             foreach ($structs as $alias => $struct) {
                 $group = $struct["group"];
-                $groupName = ucfirst($group);
+                $groupName = self::getGroupName($group);
 
                 if (!isset($groupFunc[$group])) {
                     // $groupFunc[$group] = "r.mergerRouteMap(),";
@@ -162,5 +162,11 @@ class GenCode
         $search = ['{controller}', '{group_map}'];
 
         return str_replace($search, [$controllers, $route], self::$allRoutes);
+    }
+
+    private static function getGroupName(string $group):string
+    {
+        $group = str_replace('-','_',$group);
+        return StringHelp::toCamelCase(ucfirst($group));
     }
 }
