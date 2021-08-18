@@ -289,9 +289,7 @@ class SwaggerCommand extends ProtocCommand
     protected function makeSwaggerFile(Swagger $swagger)
     {
         $json = json_encode($swagger->toArray(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        file_put_contents('/Users/lv/Desktop/golang/lrs-circle-server/bin/proto-parser/test/web'."/swagger.json",
-            $json);
-        //file_put_contents($this->getHomePath("/generate")."/swagger.json", $json);
+        file_put_contents($this->getHomePath("/generate")."/swagger.json", $json);
     }
 
     protected function toResponse(string $routeModule, Message $message): Response
