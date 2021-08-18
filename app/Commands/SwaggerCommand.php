@@ -289,7 +289,7 @@ class SwaggerCommand extends ProtocCommand
     protected function makeSwaggerFile(Swagger $swagger)
     {
         $json = json_encode($swagger->toArray(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        file_put_contents($this->getHomePath("/generate")."/swagger.json", $json);
+        file_put_contents($this->getHomePath("/generate/swagger")."/swagger.json", $json);
     }
 
     protected function toResponse(string $routeModule, Message $message): Response
