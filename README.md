@@ -54,4 +54,4 @@ func InitializeNewkernelProvider() *kernel {
 # 系统地使用
 
 写一个能够半低代码是go框架
-https://github.com/cyz-home/home-admin
+https://github.com/go-home-admin/home
