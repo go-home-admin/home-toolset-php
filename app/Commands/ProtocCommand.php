@@ -87,7 +87,7 @@ class ProtocCommand extends Command
                             if (is_file($check.'/'.$checkValue)
                                 && pathinfo($check.'/'.$checkValue, PATHINFO_EXTENSION) == "proto") {
                                 $hasProtoFile = true;
-                            } else {
+                            } else if (is_dir($check.'/'.$checkValue)) {
                                 $tempGot = $this->getProtobufDir($check.'/'.$checkValue);
                                 foreach ($tempGot as $v => $c) {
                                     $got[$v] = $c;
