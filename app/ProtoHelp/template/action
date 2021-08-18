@@ -23,7 +23,7 @@ func (receiver *Controller) GinHandle{name}(ctx *gin.Context) {
 		return
 	}
 
-	resp, err := receiver.Index(req, ctx)
+	resp, err := receiver.{name}(req, ctx)
 	if err != nil {
 		providers.ErrorResponse(ctx, err)
 		return
