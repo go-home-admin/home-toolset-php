@@ -80,6 +80,10 @@ class Type extends FileParser
         if ($ok) {
             $attr = new Attribute();
             $attr->setName($tempAttr[0]);
+            if (!isset($tempAttr[2])){
+                // 内嵌类型
+                return false;
+            }
             $type = $tempAttr[2];
             if (!$type) {
                 // 注释

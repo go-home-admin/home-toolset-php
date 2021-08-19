@@ -48,7 +48,9 @@ class ArrayToFileInfo
                     $doc = '';
                     break;
                 default:
-                    $doc .= $str;
+                    if ( substr($str,0,2)=="//" ) {
+                        $doc .= $str;
+                    }
                     break;
             }
         }
