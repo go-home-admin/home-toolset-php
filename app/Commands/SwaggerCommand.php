@@ -143,7 +143,22 @@ class SwaggerCommand extends ProtocCommand
         foreach ($routeService as $routeModule => $arr) {
             foreach ($arr as $routeGroup => $routeInfoArr) {
                 if (!isset($routeConfig[$routeGroup])) {
-                    $this->output->writeln("<error>{$routeModule}@{$routeGroup}分组信息没有配置到route.json</error>");
+                    if ('swagger' == $routeGroup) {
+                        continue;
+                    }
+                    $this->output->writeln("<error>protobuf/{$routeModule}目录下的{$routeGroup}分组信息没有配置到route.json</error>");
+                    $this->output->writeln(<<<dd
+  {
+    "name": "{$routeGroup}",
+    "prefix": "/",
+    "security": [
+      {
+        "api_key": []
+      }
+    ]
+  }
+dd
+                    );
                     continue;
                 }
                 $config   = $routeConfig[$routeGroup];
@@ -289,7 +304,7 @@ class SwaggerCommand extends ProtocCommand
     protected function makeSwaggerFile(Swagger $swagger)
     {
         $json = json_encode($swagger->toArray(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        file_put_contents($this->getHomePath("/generate/swagger")."/swagger.json", $json);
+        file_put_contents($this->getHomePath("/app/http/swagger/doc")."/swagger.json", $json);
     }
 
     protected function toResponse(string $routeModule, Message $message): Response
