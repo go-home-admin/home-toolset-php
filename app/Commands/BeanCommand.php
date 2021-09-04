@@ -57,9 +57,12 @@ class BeanCommand extends Command
             if (pathinfo($file,PATHINFO_BASENAME) == "z_inject_gen.go"){
                 continue;
             }
-
+            $context = file_get_contents($file);
+            if (!strpos($context, '@Bean')) {
+                continue;
+            }
             $dir    = dirname($file);
-            $goArr  = new GolangToArray($file);
+            $goArr  = new GolangToArray($file, $context);
             $golang = $goParser->parser($goArr);
 
             foreach ($golang->getType() as $type) {
