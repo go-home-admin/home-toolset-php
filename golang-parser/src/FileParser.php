@@ -52,7 +52,7 @@ abstract class FileParser
                 case 1:
                     if ($item == $end) {
                         $count--;
-                        if ($count < 0) {
+                        if ($count <= 0) {
                             $on = 2;
                         } else {
                             $got[] = $item;

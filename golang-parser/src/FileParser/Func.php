@@ -37,10 +37,54 @@ class Func extends FileParser
             $this->setName($arr[2]);
             $this->setIsStruct(false);
 
-            $offsetPar = 0;
             $arrPar    = $this->cutArray('(', ')', $arr);
             $arrPar    = array_values($arrPar);
+
+            // name name_got type
+            $on = 'name';
+            foreach ($arrPar as $str) {
+                $str = trim($str);
+                if ($on == 'name' && !empty($str)) {
+                    $param = ['name' => $str];
+                    $on    = 'name_got';
+                } elseif ($on == 'name_got' && !empty($str)) {
+                    if ($str == 'func') {
+                        $param['name'] = 'nil';
+                        $on                    = 'to)';
+                    } else {
+                        $param['alias']   = '';
+                        $param['pointer'] = false;
+                        if (strpos($str, '*')==0) {
+                            $param['type']['pointer'] = true;
+                            $str                      = substr($str, 1);
+                        }
+                        $arrParTemp            = explode('.', $str);
+                        $param['type'] = end($arrParTemp);
+                        if (count($arrParTemp) == 2) {
+                            $param['alias'] = reset($arrParTemp);
+                        }
+                        $on = 'type';
+                    }
+                    $this->parameter[] = $param;
+                } elseif ($on == 'type') {
+                    if ($str == ',') {
+                        $on = 'name';
+                    }
+                } elseif ($on == 'to)') {
+                    if ($str == ')') {
+                        $on = 'type';
+                    }
+                }
+            }
         }
+    }
+
+    /**
+     * @return array
+     */
+    public function getParameter(): array
+    {
+        return $this->parameter;
     }
 
     /**

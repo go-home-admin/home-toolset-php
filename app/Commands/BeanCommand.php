@@ -26,7 +26,7 @@ class BeanCommand extends Command
     {
         return $this->setName("make:bean")
             ->setDescription("生成依赖文件")
-            ->addArgument("path", InputArgument::REQUIRED, "编排目录, 这个目录下的所有go文件的bean注释")
+            ->addArgument("path", InputArgument::OPTIONAL, "编排目录, 这个目录下的所有go文件的bean注释")
             ->setHelp("根据@Bean的注解, 生成依赖定义文件");
     }
 
@@ -38,6 +38,10 @@ class BeanCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $dirCheck = $input->getArgument("path");
+        if (!$dirCheck) {
+            $dirCheck = HOME_PATH . '/app';
+        }
+
         if (!is_dir($dirCheck)) {
             $dirCheck2 = getcwd() ."/". $dirCheck;
             if (!is_dir($dirCheck2)) {
@@ -105,10 +109,13 @@ class BeanCommand extends Command
             // 生成服务提供
             if (!$golang->hasFunc("New{$type->getName()}Provider")) {
                 $gen->addFunc($this->getProviderFunc($golang, $type));
+                // 生成服务初始化
+                $gen->addFunc($this->getInitializeFunc($golang, $type, $imports));
+            }else{
+                // 已经存在服务提供者, 自动解析所需参数
+                // 生成服务初始化
+                $gen->addFunc($this->getInitializeFunc($golang, $type, $imports,true));
             }
-
-            // 生成服务初始化
-            $gen->addFunc($this->getInitializeFunc($golang, $type));
 
             // 变量单例缓存
             $varGen = new GoLangVar();
@@ -122,23 +129,54 @@ class BeanCommand extends Command
         $gen->push();
     }
 
-    public function getInitializeFunc(GolangParser $golang, Type $type): GoLangFunc
+    public function getInitializeFunc(GolangParser $golang, Type $type, array &$imports, bool $par = false): GoLangFunc
     {
         $func = new GoLangFunc();
         $code = "";
 
         $attrs = $type->getAttributes();
         $pars  = '';
-        foreach ($attrs as $attr) {
-            $tags = $attr->getTags();
-            if (isset($tags["inject"])) {
-                if ($attr->getStructAlias()) {
-                    $provider = $attr->getStructAlias().".InitializeNew{$attr->getStruct()}Provider()";
-                } else {
-                    $provider = "InitializeNew{$attr->getStruct()}Provider()";
-                }
+        if ($par===false){
+            // struct 属性解析
+            foreach ($attrs as $attr) {
+                $tags = $attr->getTags();
+                if (isset($tags["inject"])) {
+                    if ($attr->getStructAlias()) {
+                        $provider = $attr->getStructAlias().".InitializeNew{$attr->getStruct()}Provider()";
+                    } else {
+                        $provider = "InitializeNew{$attr->getStruct()}Provider()";
+                    }
 
-                $pars .= "\n\t\t\t{$provider},\n\t\t";
+                    $pars .= "\n\t\t\t{$provider},\n\t\t";
+                }
+            }
+        }else{
+            // 函数参数解析
+            $provider = "New{$type->getName()}Provider";
+            foreach ($golang->getFunc() as $funcTemp){
+                if ($provider == $funcTemp->getName()){
+                    $params = $funcTemp->getParameter();
+                    foreach ($params as $param){
+                        if ($param['name']=='nil') {
+                            $pars .= "\n\t\t\tnil,\n\t\t";
+                        }else{
+                            if ($param['alias']) {
+                                $provider = $param['alias'].".InitializeNew{$param['type']}Provider()";
+
+                                $alias = $param['alias'];
+                                if ($alias){
+                                    if (!isset($imports[$alias])) {
+                                        $imports[$alias] = $golang->getImport($alias);
+                                    }
+                                }
+                            } else {
+                                $provider = "InitializeNew{$param['type']}Provider()";
+                            }
+                            $pars .= "\n\t\t\t{$provider},\n\t\t";
+                        }
+                    }
+                    break;
+                }
             }
         }
         $func->setReturns(["*".$type->getName()]);

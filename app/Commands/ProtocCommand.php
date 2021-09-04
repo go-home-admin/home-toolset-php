@@ -57,6 +57,11 @@ class ProtocCommand extends Command
         foreach ($protocPaths as $dir) {
             $command = "protoc --proto_path={$dir}";
             foreach ($protoPaths as $protoPath) {
+                if (!is_dir($protoPath)){
+                    if (is_dir(HOME_PATH . $protoPath)){
+                        $protoPath = HOME_PATH . $protoPath;
+                    }
+                }
                 $command .= " --proto_path={$protoPath}";
             }
             $this->makeDir($tempOut);
