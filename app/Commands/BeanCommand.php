@@ -4,6 +4,7 @@
 namespace App\Commands;
 
 
+use App\Go;
 use GoLang\Parser\FileParser\Type;
 use GoLang\Parser\Generate\GoLangFile;
 use GoLang\Parser\Generate\GoLangFunc;
@@ -113,7 +114,7 @@ class BeanCommand extends Command
             $gen->addVar($varGen);
         }
 
-        $imports["home_constraint"] = "github.com/go-home-admin/home/bootstrap/constraint";
+        $imports["home_constraint"] = Go::getModule() . "/bootstrap/constraint";
         $gen->setImport($imports);
         $gen->push();
     }
