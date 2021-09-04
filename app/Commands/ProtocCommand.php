@@ -55,7 +55,7 @@ class ProtocCommand extends Command
         $tempOut     = dirname($goOut)."/temp";
 
         foreach ($protocPaths as $dir) {
-            $command = "protoc";
+            $command = "protoc --proto_path={$dir}";
             foreach ($protoPaths as $protoPath) {
                 $command .= " --proto_path={$protoPath}";
             }
