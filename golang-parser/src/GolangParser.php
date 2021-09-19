@@ -47,6 +47,18 @@ class GolangParser
     }
 
     /**
+     * @return string
+     */
+    public function getPackageDoc(): string
+    {
+        /** @var \GoLang\Parser\FileParser\Package $item */
+        foreach ($this->fileInfo['package'] ?? [] as $item) {
+            return $item->getDoc();
+        }
+        return '';
+    }
+
+    /**
      * @return \GoLang\Parser\FileParser\Type[]
      */
     public function getType(): array

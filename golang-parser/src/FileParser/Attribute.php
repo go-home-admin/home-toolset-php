@@ -10,7 +10,7 @@ class Attribute
     protected $type;
     protected $struct;
     protected $structAlias;
-
+    protected $doc;
 
     protected $isPointer = false;
 
@@ -18,6 +18,7 @@ class Attribute
     protected $notArray = true;
 
     protected $tags = [];
+    protected $tagString = '';
 
     /**
      * @return string
@@ -138,5 +139,37 @@ class Attribute
     public function setStructAlias($structAlias): void
     {
         $this->structAlias = $structAlias;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getDoc()
+    {
+        return $this->doc;
+    }
+
+    /**
+     * @param  mixed  $doc
+     */
+    public function setDoc($doc): void
+    {
+        $this->doc = $doc;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTagString(): string
+    {
+        return $this->tagString;
+    }
+
+    /**
+     * @param  string  $tagString
+     */
+    public function setTagString(string $tagString): void
+    {
+        $this->tagString = $tagString;
     }
 }

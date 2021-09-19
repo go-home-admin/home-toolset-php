@@ -5,6 +5,7 @@ namespace GoLang\Parser\FileParser;
 
 
 use GoLang\Parser\FileParser;
+use GoLang\Parser\GolangToArray;
 use ProtoParser\StringHelp;
 
 class Func extends FileParser
@@ -22,7 +23,7 @@ class Func extends FileParser
      * @param  int  $offset
      * @param  string  $doc
      */
-    public function __construct(array $array, int &$offset, string $doc)
+    public function __construct(array $array, int &$offset, string $doc, GolangToArray $goArray)
     {
         $this->doc = trim($doc);
 

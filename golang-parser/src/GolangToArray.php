@@ -18,6 +18,8 @@ class GolangToArray
     ];
 
     private $array = [];
+    private $offsetToArray = [];
+    private $sourceArray = [];
 
     public $file;
 
@@ -30,35 +32,35 @@ class GolangToArray
 
         $word = '';
 
-        $onState   = self::onNew;
-        $allStrArr = $this->mbSplit($content);
+        $onState           = self::onNew;
+        $this->sourceArray = $this->mbSplit($content);
 
         $onStrStateCache = '';
         $onStrStateCount = 0;
 
-        for ($offset = 0; $offset < count($allStrArr); $offset++) {
-            $char = $allStrArr[$offset];
+        for ($offset = 0; $offset < count($this->sourceArray); $offset++) {
+            $char = $this->sourceArray[$offset];
             switch ($onState) {
                 case self::onNew:
                     // 全新解析
-                    if ($this->checkDoc($allStrArr, $offset)) {
+                    if ($this->checkDoc($this->sourceArray, $offset)) {
                         // 进入注释
                         $word    .= $char;
                         $onState = self::onDoc;
-                    } elseif ($this->checkStr($allStrArr, $offset, $onStrStateCache, $onStrStateCount)) {
+                    } elseif ($this->checkStr($this->sourceArray, $offset, $onStrStateCache, $onStrStateCount)) {
                         // 进入字符串解析
                         $word    .= $char;
                         $onState = self::onStr;
                     } elseif (in_array($char, self::Separator)) {
                         // 遇到分隔符号
                         if ($word != "") {
-                            $this->array[] = trim($word);
-                            $this->array[] = $char;
-                            $word          = '';
+                            $this->addArray(trim($word), $offset);
+                            $this->addArray($char, $offset);
+                            $word = '';
                         } else {
                             if ($char != " ") {
-                                $this->array[] = $char;
-                                $word          = '';
+                                $this->addArray($char, $offset);
+                                $word = '';
                             }
                         }
                         $onState = self::onNew;
@@ -69,19 +71,19 @@ class GolangToArray
                 case self::onDoc:
                     // 解析注释当中
                     if ($char == PHP_EOL) {
-                        $this->array[] = trim($word);
-                        $this->array[] = $char;
-                        $word          = '';
-                        $onState       = self::onNew;
+                        $this->addArray(trim($word), $offset);
+                        $this->addArray($char, $offset);
+                        $word    = '';
+                        $onState = self::onNew;
                     } else {
                         $word .= $char;
                     }
                     break;
                 case self::onStr:
-                    if ($this->checkStr($allStrArr, $offset, $onStrStateCache, $onStrStateCount)) {
-                        $this->array[] = trim($word.$char);
-                        $word          = '';
-                        $onState       = self::onNew;
+                    if ($this->checkStr($this->sourceArray, $offset, $onStrStateCache, $onStrStateCount)) {
+                        $this->addArray(trim($word.$char), $offset);
+                        $word    = '';
+                        $onState = self::onNew;
                     } else {
                         $word .= $char;
                     }
@@ -93,7 +95,7 @@ class GolangToArray
 
         if ($onState == self::onNew) {
             if ($word != "") {
-                $this->array[] = trim($word);
+                $this->addArray(trim($word), $offset);
             }
         }
     }
@@ -126,7 +128,7 @@ class GolangToArray
             }
             if ($onStrStateCache == $allStrArr[$offset]) {
                 $onStrStateCount--;
-                if ( $onStrStateCount<=0 ) {
+                if ($onStrStateCount <= 0) {
                     $onStrStateCache = '';
                     return true;
                 }
@@ -147,6 +149,22 @@ class GolangToArray
             $strLen  = mb_strlen($string);
         }
         return $array;
+    }
+
+    public function addArray(string $char, int $offset)
+    {
+        $this->array[]                            = $char;
+        $this->offsetToArray[count($this->array)] = $offset;
+    }
+
+    public function getFileOffset(int $index): int
+    {
+        return $this->offsetToArray[$index];
+    }
+
+    public function getFileString(int $start, int $end): string
+    {
+        return implode("", array_slice($this->sourceArray, $start, $end - $start));
     }
 
     public function getArray(): array

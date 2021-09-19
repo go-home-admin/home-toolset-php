@@ -51,6 +51,18 @@ func InitializeNewkernelProvider() *kernel {
 而`InitializeNewkernelProvider`才是其他业务或者测试逻辑初始函数, 当然作为一个整体系统开发来说,
 `InitializeNewkernelProvider` 也是由框架层的引导程序初始化, 一般也很少调用, 单元测试用的多。
 
+# proto自定义标签
+~~~~
+// proto文件顶部注释, 全部json标签后都统一加上bson标签
+// @JsonExt("bson")
+
+// 属性标签
+message ApiDemoHomeRequest {
+  // @JsonExt("gorm", "primaryKey")
+  int64 id = 1;
+}
+~~~~
+
 # 系统地使用
 
 写一个能够半低代码是go框架

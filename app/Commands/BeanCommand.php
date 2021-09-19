@@ -41,7 +41,8 @@ class BeanCommand extends Command
         if (!$dirCheck) {
             $dirCheck = HOME_PATH . '/app';
         }
-
+        $dirCheck = realpath($dirCheck);
+        $output->writeln("<info>{$dirCheck} Bean ...</info>");
         if (!is_dir($dirCheck)) {
             $dirCheck2 = getcwd() ."/". $dirCheck;
             if (!is_dir($dirCheck2)) {
@@ -81,7 +82,6 @@ class BeanCommand extends Command
             $this->toGenerateDirInject($dir, $item);
         }
 
-        $output->writeln("<info>{$dirCheck} OK</info>");
         return Command::SUCCESS;
     }
 

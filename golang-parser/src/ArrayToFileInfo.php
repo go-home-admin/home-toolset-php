@@ -24,27 +24,27 @@ class ArrayToFileInfo
             $str = $array[$offset];
             switch ($str) {
                 case "package":
-                    $fileInfo["package"][] = new Package($array, $offset, $doc);
+                    $fileInfo["package"][] = new Package($array, $offset, $doc, $goArray);
                     $doc = '';
                     break;
                 case "import":
-                    $fileInfo["import"][] = new Import($array, $offset, $doc);
+                    $fileInfo["import"][] = new Import($array, $offset, $doc, $goArray);
                     $doc = '';
                     break;
                 case "type":
-                    $fileInfo["type"][] = new Type($array, $offset, $doc);
+                    $fileInfo["type"][] = new Type($array, $offset, $doc, $goArray);
                     $doc = '';
                     break;
                 case "func":
-                    $fileInfo["func"][] = new Func($array, $offset, $doc);
+                    $fileInfo["func"][] = new Func($array, $offset, $doc, $goArray);
                     $doc = '';
                     break;
                 case "const":
-                    $fileInfo["const"][] = new GoConst($array, $offset, $doc);
+                    $fileInfo["const"][] = new GoConst($array, $offset, $doc, $goArray);
                     $doc = '';
                     break;
                 case "var":
-                    $fileInfo["var"][] = new GoVar($array, $offset, $doc);
+                    $fileInfo["var"][] = new GoVar($array, $offset, $doc, $goArray);
                     $doc = '';
                     break;
                 default:
