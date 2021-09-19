@@ -5,13 +5,14 @@ namespace GoLang\Parser\FileParser;
 
 
 use GoLang\Parser\FileParser;
+use GoLang\Parser\GolangToArray;
 
 class GoConst extends FileParser
 {
     protected $value;
     protected $doc;
 
-    public function __construct(array $array, int &$offset, string $doc)
+    public function __construct(array $array, int &$offset, string $doc, GolangToArray $goArray)
     {
         $this->doc = $doc;
 

@@ -15,9 +15,12 @@ class Type extends FileParser
     protected $attributes = [];
     protected $isStruct = false;
     protected $doc;
+    protected $startOffset = 0;
+    protected $endOffset = 0;
 
-    public function __construct(array $array, int &$offset, string $doc)
+    public function __construct(array $array, int &$offset, string $doc, GolangToArray $goArray)
     {
+        $this->startOffset = $goArray->getFileOffset($offset);
         $this->doc = trim($doc);
 
         $temp = $offset;
@@ -33,6 +36,7 @@ class Type extends FileParser
             $this->type = $arr[4];
             $this->name = $arr[2];
         }
+        $this->endOffset = $goArray->getFileOffset($offset);
     }
 
     public function parser(array $array, int &$offset)
@@ -49,27 +53,30 @@ class Type extends FileParser
         $goArray = new GolangToArray('', trim($code));
 
         $tempAttr = [];
+        $doc = '';
         foreach ($goArray->getArray() as $str) {
             if ($str == PHP_EOL) {
                 if ($tempAttr) {
-                    $this->setAttr($tempAttr);
+                    $this->setAttr($tempAttr, $doc);
                 }
 
                 $tempAttr = [];
             } else {
                 if ($tempAttr || trim($str)) {
-                    if (substr($str,0,2)!="//"){
+                    if (substr($str, 0, 2) != "//") {
                         $tempAttr[] = $str;
+                    } else {
+                        $doc = $str;
                     }
                 }
             }
         }
         if ($tempAttr) {
-            $this->setAttr($tempAttr);
+            $this->setAttr($tempAttr, $doc);
         }
     }
 
-    protected function setAttr(array $tempAttr)
+    protected function setAttr(array $tempAttr, string $doc)
     {
         $ok = true;
         foreach ($tempAttr as $item) {
@@ -80,7 +87,8 @@ class Type extends FileParser
         if ($ok) {
             $attr = new Attribute();
             $attr->setName($tempAttr[0]);
-            if (!isset($tempAttr[2])){
+            $attr->setDoc($doc);
+            if (!isset($tempAttr[2])) {
                 // 内嵌类型
                 return false;
             }
@@ -89,24 +97,14 @@ class Type extends FileParser
                 // 注释
                 return false;
             }
-            switch (substr($type, 0,1)) {
+            switch (substr($type, 0, 1)) {
                 case "*":
                     $attr->setIsPointer(true);
                     $attr->setType(substr($type, 1));
-
-                    if (isset($tempAttr[4]) && substr($tempAttr[4],0, 1) == '`') {
-                        $tagStr = trim($tempAttr[4],'`');
-                        $tagArr = [];
-                        foreach (explode(' ', $tagStr) as $tagBase) {
-                            $tagTempArr             = explode(':', $tagBase);
-                            $tagArr[$tagTempArr[0]] = trim($tagTempArr[1], '"');
-                        }
-                        $attr->setTags($tagArr);
-                    }
                     break;
                 case "[":
                     $attr->setNotArray(false);
-                    if (substr($type, 2,1) == "*") {
+                    if (substr($type, 2, 1) == "*") {
                         $attr->setIsPointer(true);
                         $attr->setType(substr($type, 3));
                     }
@@ -115,7 +113,16 @@ class Type extends FileParser
                     $attr->setType($type);
                     break;
             }
-
+            if (isset($tempAttr[4]) && substr($tempAttr[4], 0, 1) == '`') {
+                $tagStr = trim($tempAttr[4], '`');
+                $tagArr = [];
+                foreach (explode(' ', $tagStr) as $tagBase) {
+                    $tagTempArr             = explode(':', $tagBase);
+                    $tagArr[$tagTempArr[0]] = trim($tagTempArr[1], '"');
+                }
+                $attr->setTags($tagArr);
+                $attr->setTagString($tagStr);
+            }
             $this->attributes[] = $attr;
         } else {
             // TODO 复杂结构不支持
@@ -162,5 +169,37 @@ class Type extends FileParser
     public function getDoc(): string
     {
         return $this->doc;
+    }
+
+    /**
+     * @return int
+     */
+    public function getStartOffset(): int
+    {
+        return $this->startOffset;
+    }
+
+    /**
+     * @param  int  $startOffset
+     */
+    public function setStartOffset(int $startOffset): void
+    {
+        $this->startOffset = $startOffset;
+    }
+
+    /**
+     * @return int
+     */
+    public function getEndOffset(): int
+    {
+        return $this->endOffset;
+    }
+
+    /**
+     * @param  int  $endOffset
+     */
+    public function setEndOffset(int $endOffset): void
+    {
+        $this->endOffset = $endOffset;
     }
 }

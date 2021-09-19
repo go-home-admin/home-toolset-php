@@ -5,6 +5,10 @@ namespace App\Commands;
 
 
 use App\Go;
+use GoLang\Parser\GolangParser;
+use GoLang\Parser\GolangToArray;
+use ProtoParser\DirsHelp;
+use ProtoParser\StringHelp;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -57,9 +61,9 @@ class ProtocCommand extends Command
         foreach ($protocPaths as $dir) {
             $command = "protoc --proto_path={$dir}";
             foreach ($protoPaths as $protoPath) {
-                if (!is_dir($protoPath)){
-                    if (is_dir(HOME_PATH . $protoPath)){
-                        $protoPath = HOME_PATH . $protoPath;
+                if (!is_dir($protoPath)) {
+                    if (is_dir(HOME_PATH.$protoPath)) {
+                        $protoPath = HOME_PATH.$protoPath;
                     }
                 }
                 $command .= " --proto_path={$protoPath}";
@@ -72,6 +76,7 @@ class ProtocCommand extends Command
         }
         $module = Go::getModule();
         system("rm -rf {$goOut}");
+        $this->jsonExtWith($tempOut);
         rename($tempOut.'/'.$module."/generate/proto", $goOut);
         system("rm -rf {$tempOut}");
 
@@ -92,10 +97,12 @@ class ProtocCommand extends Command
                             if (is_file($check.'/'.$checkValue)
                                 && pathinfo($check.'/'.$checkValue, PATHINFO_EXTENSION) == "proto") {
                                 $hasProtoFile = true;
-                            } else if (is_dir($check.'/'.$checkValue)) {
-                                $tempGot = $this->getProtobufDir($check.'/'.$checkValue);
-                                foreach ($tempGot as $v => $c) {
-                                    $got[$v] = $c;
+                            } else {
+                                if (is_dir($check.'/'.$checkValue)) {
+                                    $tempGot = $this->getProtobufDir($check.'/'.$checkValue);
+                                    foreach ($tempGot as $v => $c) {
+                                        $got[$v] = $c;
+                                    }
                                 }
                             }
                         }
@@ -168,5 +175,93 @@ class ProtocCommand extends Command
             echo "mkdir 0755 {$path}\n";
             mkdir($path, 0755, true);
         }
+    }
+
+    // 检查go文件, 符合json扩展标签
+
+    protected function jsonExtWith(string $dirCheck)
+    {
+        $goParser    = new GolangParser();
+        $dirGenerate = [];
+        foreach (DirsHelp::getDirs($dirCheck, 'go') as $file) {
+            if (!strpos($file, ".pb.go")) {
+                continue;
+            }
+            $context = file_get_contents($file);
+            if (!strpos($context, '@JsonExt')) {
+                continue;
+            }
+
+            $goArr  = new GolangToArray($file, $context);
+            $golang = $goParser->parser($goArr);
+
+            $fileJsonExt = $this->getJsonExt($golang->getPackageDoc());
+            foreach ($golang->getType() as $type) {
+                $doc         = $type->getDoc();
+                $typeJsonExt = $this->getJsonExt($doc);
+                $typeString  = $goArr->getFileString($type->getStartOffset(), $type->getEndOffset());
+                $replace     = [];
+                foreach ($type->getAttributes() as $attribute) {
+                    $doc         = $attribute->getDoc();
+                    $attrJsonExt = $this->getJsonExt($doc);
+
+                    if ($fileJsonExt || $typeJsonExt || $attrJsonExt) {
+                        foreach ($attribute->getTags() as $name => $tag) {
+                            if ($name === 'json') {
+                                $old = $new = $name.':"'.$tag.'"';
+                                foreach ([$attrJsonExt, $typeJsonExt, $fileJsonExt] as $ext) {
+                                    if ($ext && !isset($replace[$old])) {
+                                        $new = $this->getExtStr($name, $tag, $ext);
+                                    }
+                                }
+                                if ($old != $new) {
+                                    $replace[$old] = $new;
+                                }
+                            }
+                        }
+                    }
+                }
+                if ($replace) {
+                    $newTypeString = str_replace(array_keys($replace), array_values($replace), $typeString);
+                    $context       = str_replace($typeString, $newTypeString, $context);
+                }
+            }
+
+            file_put_contents($file, $context);
+        }
+    }
+
+    protected function getExtStr(string $name, string $tag, array $ext): string
+    {
+        $extName  = $ext['name'];
+        $extValue = $ext['value'];
+        if (!$extValue) {
+            $extValue = '{name}';
+        }
+        $old = $name.':"'.$tag.'"';
+        $new = "{$old} {$extName}:\"{$extValue}\"";
+
+        $arr     = explode(',', $tag);
+        $tagName = reset($arr);
+        return str_replace(
+            ['{name}'],
+            [$tagName],
+            $new
+        );
+    }
+
+    protected function getJsonExt(string $doc): array
+    {
+        if (!strpos($doc, '@JsonExt')) {
+            return [];
+        }
+        $str      = StringHelp::cutStr("@JsonExt(", ")", $doc);
+        $tagName  = StringHelp::cutChar('"', '"', $str);
+        $tagValue = StringHelp::cutChar('"', '"', substr($str, strlen($tagName)));
+
+        $tagName  = trim($tagName, '"');
+        $tagValue = trim($tagValue, '"');
+
+        return ['name' => $tagName, 'value' => $tagValue];
     }
 }

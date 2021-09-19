@@ -5,13 +5,14 @@ namespace GoLang\Parser\FileParser;
 
 
 use GoLang\Parser\FileParser;
+use GoLang\Parser\GolangToArray;
 use ProtoParser\StringHelp;
 
 class Import extends FileParser
 {
     protected $value = [];
 
-    public function __construct(array $array, int &$offset, string $doc)
+    public function __construct(array $array, int &$offset, string $doc, GolangToArray $goArray)
     {
         $temp = $offset;
         $arr  = self::onStopWithFirstStr($array, $temp, PHP_EOL);

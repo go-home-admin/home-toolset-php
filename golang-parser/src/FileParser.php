@@ -6,7 +6,7 @@ namespace GoLang\Parser;
 
 abstract class FileParser
 {
-    abstract public function __construct(array $array, int &$offset, string $doc);
+    abstract public function __construct(array $array, int &$offset, string $doc, GolangToArray $goArray);
 
     /**
      * 遇到第一个结束符号返回

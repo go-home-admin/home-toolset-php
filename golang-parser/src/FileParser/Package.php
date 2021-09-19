@@ -5,13 +5,14 @@ namespace GoLang\Parser\FileParser;
 
 
 use GoLang\Parser\FileParser;
+use GoLang\Parser\GolangToArray;
 
 class Package extends FileParser
 {
     protected $value;
-    protected $doc;
+    protected $doc = '';
 
-    public function __construct(array $array, int &$offset, string $doc)
+    public function __construct(array $array, int &$offset, string $doc, GolangToArray $goArray)
     {
         $this->doc = $doc;
 
@@ -28,5 +29,13 @@ class Package extends FileParser
     public function getValue(): string
     {
         return $this->value;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDoc(): string
+    {
+        return $this->doc;
     }
 }
