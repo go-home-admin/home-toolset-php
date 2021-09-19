@@ -89,12 +89,12 @@ class Type extends FileParser
                 // 注释
                 return false;
             }
-            switch ($type{0}) {
+            switch (substr($type, 0,1)) {
                 case "*":
                     $attr->setIsPointer(true);
                     $attr->setType(substr($type, 1));
 
-                    if (isset($tempAttr[4]) && $tempAttr[4]{0} == '`') {
+                    if (isset($tempAttr[4]) && substr($tempAttr[4],0, 1) == '`') {
                         $tagStr = trim($tempAttr[4],'`');
                         $tagArr = [];
                         foreach (explode(' ', $tagStr) as $tagBase) {
@@ -106,7 +106,7 @@ class Type extends FileParser
                     break;
                 case "[":
                     $attr->setNotArray(false);
-                    if ($type{2} == "*") {
+                    if (substr($type, 2,1) == "*") {
                         $attr->setIsPointer(true);
                         $attr->setType(substr($type, 3));
                     }
