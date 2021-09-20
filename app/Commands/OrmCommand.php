@@ -74,8 +74,13 @@ class OrmCommand extends Command
                 mkdir($path, 0750);
             }
             $this->output->writeln("<info>go文件输出路径 $path</info>");
+        } else {
+            $path = HOME_PATH."/".$path;
+            if (!is_dir($path)) {
+                mkdir($path, 0750);
+            }
         }
-        return $path;
+        return realpath($path);
     }
 
     public function getDbInfo()
