@@ -21,7 +21,7 @@ class Type extends FileParser
     public function __construct(array $array, int &$offset, string $doc, GolangToArray $goArray)
     {
         $this->startOffset = $goArray->getFileOffset($offset);
-        $this->doc = trim($doc);
+        $this->doc         = trim($doc);
 
         $temp = $offset;
         $arr  = self::onStopWithFirstStr($array, $temp, PHP_EOL);
@@ -53,7 +53,7 @@ class Type extends FileParser
         $goArray = new GolangToArray('', trim($code));
 
         $tempAttr = [];
-        $doc = '';
+        $doc      = '';
         foreach ($goArray->getArray() as $str) {
             if ($str == PHP_EOL) {
                 if ($tempAttr) {
@@ -116,9 +116,15 @@ class Type extends FileParser
             if (isset($tempAttr[4]) && substr($tempAttr[4], 0, 1) == '`') {
                 $tagStr = trim($tempAttr[4], '`');
                 $tagArr = [];
-                foreach (explode(' ', $tagStr) as $tagBase) {
-                    $tagTempArr             = explode(':', $tagBase);
-                    $tagArr[$tagTempArr[0]] = trim($tagTempArr[1], '"');
+                for ($i = 0; $i < 20; $i++) {
+                    $tagStr = trim($tagStr, '');
+                    $index   = strpos($tagStr, ':');
+                    $tagName = substr($tagStr, 0, $index);
+                    $tagStr  = substr($tagStr, $index + 1);
+                    $tagValue = StringHelp::cutChar('"','"',$tagStr);
+                    $tagStr  = substr($tagStr, strlen($tagValue));
+
+                    $tagArr[$tagName] = trim($tagValue, '"');
                 }
                 $attr->setTags($tagArr);
                 $attr->setTagString($tagStr);

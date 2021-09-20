@@ -19,6 +19,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class BeanCommand extends Command
 {
+    /** @var InputInterface */
+    protected $input;
+    /** @var OutputInterface */
+    protected $output;
+
     /**
      * @return \App\Commands\BeanCommand
      */
@@ -37,43 +42,48 @@ class BeanCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $this->input  = $input;
+        $this->output = $output;
+
         $dirCheck = $input->getArgument("path");
         if (!$dirCheck) {
-            $dirCheck = HOME_PATH . '/app';
+            $dirCheck = HOME_PATH.'/app';
         }
         $dirCheck = realpath($dirCheck);
         $output->writeln("<info>{$dirCheck} Bean ...</info>");
         if (!is_dir($dirCheck)) {
-            $dirCheck2 = getcwd() ."/". $dirCheck;
+            $dirCheck2 = getcwd()."/".$dirCheck;
             if (!is_dir($dirCheck2)) {
                 $output->writeln("<error>{$dirCheck} 目录不存在, 优先绝对路径</error>");
                 $output->writeln("<error>{$dirCheck} 不存在会在工作目录下检查 {$dirCheck2}</error>");
                 return Command::FAILURE;
             }
             $dirCheck = realpath($dirCheck2);
-        }else{
+        } else {
             $dirCheck = realpath($dirCheck);
         }
 
         $goParser    = new GolangParser();
         $dirGenerate = [];
-        // 收集bean
-        foreach (DirsHelp::getDirs($dirCheck, 'go') as $file) {
-            if (pathinfo($file,PATHINFO_BASENAME) == "z_inject_gen.go"){
-                continue;
-            }
-            $context = file_get_contents($file);
-            if (!strpos($context, '@Bean')) {
-                continue;
-            }
-            $dir    = dirname($file);
-            $goArr  = new GolangToArray($file, $context);
-            $golang = $goParser->parser($goArr);
-
-            foreach ($golang->getType() as $type) {
-                $doc = $type->getDoc();
-                if ($doc && $type->isStruct() && strpos($doc, '@Bean')) {
-                    $dirGenerate[$dir][$type->getName()] = [$golang, $type];
+        $checkDir    = $this->getDirList($dirCheck);
+        foreach ($checkDir as $d) {
+            // 收集bean
+            foreach (DirsHelp::getDirs($d, 'go') as $file) {
+                if (pathinfo($file, PATHINFO_BASENAME) == "z_inject_gen.go") {
+                    continue;
+                }
+                $context = file_get_contents($file);
+                if (!strpos($context, '@Bean')) {
+                    continue;
+                }
+                $goArr  = new GolangToArray($file, $context);
+                $golang = $goParser->parser($goArr);
+                $dir    = dirname($file);
+                foreach ($golang->getType() as $type) {
+                    $doc = $type->getDoc();
+                    if ($doc && $type->isStruct() && strpos($doc, '@Bean')) {
+                        $dirGenerate[$dir][$type->getName()] = [$golang, $type];
+                    }
                 }
             }
         }
@@ -111,10 +121,10 @@ class BeanCommand extends Command
                 $gen->addFunc($this->getProviderFunc($golang, $type));
                 // 生成服务初始化
                 $gen->addFunc($this->getInitializeFunc($golang, $type, $imports));
-            }else{
+            } else {
                 // 已经存在服务提供者, 自动解析所需参数
                 // 生成服务初始化
-                $gen->addFunc($this->getInitializeFunc($golang, $type, $imports,true));
+                $gen->addFunc($this->getInitializeFunc($golang, $type, $imports, true));
             }
 
             // 变量单例缓存
@@ -124,7 +134,7 @@ class BeanCommand extends Command
             $gen->addVar($varGen);
         }
 
-        $imports["home_constraint"] = Go::getModule() . "/bootstrap/constraint";
+        $imports["home_constraint"] = Go::getModule()."/bootstrap/constraint";
         $gen->setImport($imports);
         $gen->push();
     }
@@ -136,7 +146,7 @@ class BeanCommand extends Command
 
         $attrs = $type->getAttributes();
         $pars  = '';
-        if ($par===false){
+        if ($par === false) {
             // struct 属性解析
             foreach ($attrs as $attr) {
                 $tags = $attr->getTags();
@@ -150,21 +160,21 @@ class BeanCommand extends Command
                     $pars .= "\n\t\t\t{$provider},\n\t\t";
                 }
             }
-        }else{
+        } else {
             // 函数参数解析
             $provider = "New{$type->getName()}Provider";
-            foreach ($golang->getFunc() as $funcTemp){
-                if ($provider == $funcTemp->getName()){
+            foreach ($golang->getFunc() as $funcTemp) {
+                if ($provider == $funcTemp->getName()) {
                     $params = $funcTemp->getParameter();
-                    foreach ($params as $param){
-                        if ($param['name']=='nil') {
+                    foreach ($params as $param) {
+                        if ($param['name'] == 'nil') {
                             $pars .= "\n\t\t\tnil,\n\t\t";
-                        }else{
+                        } else {
                             if ($param['alias']) {
                                 $provider = $param['alias'].".InitializeNew{$param['type']}Provider()";
 
                                 $alias = $param['alias'];
-                                if ($alias){
+                                if ($alias) {
                                     if (!isset($imports[$alias])) {
                                         $imports[$alias] = $golang->getImport($alias);
                                     }
@@ -276,5 +286,39 @@ class BeanCommand extends Command
             }
         }
         return $imports;
+    }
+
+    /**
+     * 获取所有目录列表
+     *
+     * @param  string  $path
+     * @return array
+     */
+    public function getDirList(string $path): array
+    {
+        $arr = [];
+        if (is_dir($path)) {
+            $dir         = scandir($path);
+            $hasChildren = false;
+            foreach ($dir as $value) {
+                $sub_path = $path.'/'.$value;
+                if ($value == '.' || $value == '..') {
+                    continue;
+                } else {
+                    if (is_dir($sub_path)) {
+                        $hasChildren = true;
+                        $arr         = array_merge($arr, $this->getDirList($sub_path));
+                    }
+                }
+            }
+            if ($hasChildren === false) {
+                // 必须是最低部的目录, 检查这个目录是否有更新
+                $genFileName = $path.'/z_inject_gen.go';
+                if (file_exists($genFileName) && filemtime($genFileName) < filemtime($path)) {
+                    $arr[] = $path;
+                }
+            }
+        }
+        return $arr;
     }
 }
