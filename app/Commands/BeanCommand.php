@@ -314,7 +314,11 @@ class BeanCommand extends Command
             if ($hasChildren === false) {
                 // 必须是最低部的目录, 检查这个目录是否有更新
                 $genFileName = $path.'/z_inject_gen.go';
-                if (file_exists($genFileName) && filemtime($genFileName) < filemtime($path)) {
+                if (file_exists($genFileName)) {
+                    if (filemtime($genFileName) < filemtime($path)) {
+                        $arr[] = $path;
+                    }
+                } else {
                     $arr[] = $path;
                 }
             }
