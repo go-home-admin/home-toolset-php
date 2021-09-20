@@ -127,9 +127,10 @@ class OrmCommand extends Command
             if (!file_exists($path)) {
                 $this->output->writeln("<error>无法读取文件, $path</error>");
             }
-            $this->output->writeln("<info>使用配置文件 $path</info>");
+        } else {
+            $path = realpath(HOME_PATH."/".$path);
         }
-
+        $this->output->writeln("<info>使用配置文件 $path</info>");
         $this->config = parse_ini_file($path);
     }
 
