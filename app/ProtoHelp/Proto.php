@@ -67,12 +67,12 @@ class Proto
             $outFile   = GenCode::getRouteFile($imports, $package, $structs);
             $outGroup  = GenCode::getRouteGroup($package, $structs);
             file_put_contents($routeFile, $outFile.$outGroup);
-            echo "写入路由分组 {$routeFile} ", PHP_EOL;
+            echo "更新路由分组 {$routeFile} ", PHP_EOL;
         }
 
         $routeFile = HOME_PATH."/routes/all_routes_gen.go";
         file_put_contents($routeFile, GenCode::getAllRouteGroup($all));
-        echo "跟新路由引用文件 {$routeFile} ", PHP_EOL;
+        echo "更新路由引用文件 {$routeFile} ", PHP_EOL;
     }
 
     public function makeRoute()

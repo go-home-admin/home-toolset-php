@@ -4,6 +4,7 @@
 require_once __DIR__ . "/vendor/autoload.php";
 
 use App\Commands\BeanCommand;
+use App\Commands\OrmCommand;
 use App\Commands\ProtocCommand;
 use App\Commands\RouteCommand;
 use App\Commands\SwaggerCommand;
@@ -20,6 +21,7 @@ $application->addCommands([
     new ProtocCommand(),
     new SwaggerCommand(),
     new RouteCommand(),
+    new OrmCommand(),
 ]);
 
 try {

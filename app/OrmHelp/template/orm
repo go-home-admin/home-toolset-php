@@ -1,0 +1,34 @@
+package {package}
+
+import (
+	"time"{import}
+)
+
+// @Bean
+type {name} struct {
+
+{column}}
+{func}
+func (receiver *{name}) Find() *{name} {
+	ret := &{name}{}
+	DB().Find(ret)
+	return ret
+}
+
+func (receiver *{name}) First() *{name} {
+	ret := &{name}{}
+	DB().First(ret)
+	return ret
+}
+
+func (receiver *{name}) And(fuc func(table *{name})) *{name} {
+	fuc(receiver)
+	DB().Where(DB())
+	return receiver
+}
+
+func (receiver *{name}) Or(fuc func(table *{name})) *{name} {
+	fuc(receiver)
+	DB().Or(DB())
+	return receiver
+}
