@@ -1,34 +1,49 @@
 package {package}
 
 import (
-	"time"{import}
-)
+    "gorm.io/gorm"{import})
 
-// @Bean
+// {name} @Bean
 type {name} struct {
+{column}    db *gorm.DB
+}
 
-{column}}
+func (receiver *{name}) Table() *{name} {
+	if  receiver.db == nil {
+		return &{name}{
+			db: DB().Table(receiver.TableName()),
+		}
+	}
+	return receiver
+}
+
+func (receiver *{name}) TableName() string {
+	return "{table}"
+}
+
 {func}
-func (receiver *{name}) Find() *{name} {
-	ret := &{name}{}
-	DB().Find(ret)
+func (receiver *{name}) Find(conds ...interface{}) []*{name} {
+	ret := make([]*{name}, 0)
+	receiver.Table().db.Find(&ret, conds...)
 	return ret
 }
 
-func (receiver *{name}) First() *{name} {
-	ret := &{name}{}
-	DB().First(ret)
-	return ret
+func (receiver *{name}) First(conds ...interface{}) *{name} {
+	con := receiver.Table()
+	con.db.First(con, conds...)
+	return con
 }
 
 func (receiver *{name}) And(fuc func(table *{name})) *{name} {
 	fuc(receiver)
-	DB().Where(DB())
-	return receiver
+	con := receiver.Table()
+	con.db.Where(con.db)
+	return con
 }
 
 func (receiver *{name}) Or(fuc func(table *{name})) *{name} {
 	fuc(receiver)
-	DB().Or(DB())
-	return receiver
+	con := receiver.Table()
+	con.db.Or(con.db)
+	return con
 }

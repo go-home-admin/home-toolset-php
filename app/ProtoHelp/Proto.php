@@ -73,6 +73,9 @@ class Proto
         $routeFile = HOME_PATH."/routes/all_routes_gen.go";
         file_put_contents($routeFile, GenCode::getAllRouteGroup($all));
         echo "更新路由引用文件 {$routeFile} ", PHP_EOL;
+
+        $outPath = dirname($routeFile);
+        exec("cd {$outPath} && go fmt");
     }
 
     public function makeRoute()

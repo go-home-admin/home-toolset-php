@@ -1,9 +1,11 @@
 func (receiver *{name}) Where{field}({field} {type}) *{name} {
-	DB().Where("{column} = ?", {field})
-	return receiver
+	con := receiver.Table()
+	con.db.Where("{column} = ?", {field})
+	return con
 }
 
 func (receiver *{name}) OrWhere{field}({field} {type}) *{name} {
-	DB().Or("{column} = ?", {field})
-	return receiver
+	con := receiver.Table()
+	con.db.Or("{column} = ?", {field})
+	return con
 }

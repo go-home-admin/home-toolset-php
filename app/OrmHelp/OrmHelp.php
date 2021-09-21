@@ -27,9 +27,9 @@ class OrmHelp
 
     public static function gen(array $tableInfo, string $file)
     {
-        $structName = $tableInfo['name'];
-        $db         = $tableInfo['db'];
-        $columns    = $tableInfo['column'];
+        $tableName = $tableInfo['name'];
+        $db        = $tableInfo['db'];
+        $columns   = $tableInfo['column'];
 
         $import    = [];
         $columnStr = '';
@@ -37,7 +37,7 @@ class OrmHelp
             $columnStr .= self::getColumnStr($column, $import);
         }
 
-        $structName = self::toName($structName);
+        $structName = 'Orm'.self::toName($tableName);
         $fileStr    = self::getOrmString('header');
 
         // 表结构
@@ -49,7 +49,7 @@ class OrmHelp
         // orm函数
         $func = '';
         foreach ($columns as $column) {
-            $func .= "\n".self::getColumnFuncStr($column, $structName);
+            $func .= "\n".self::getColumnFuncStr($column);
         }
 
         $fileStr = str_replace(
@@ -57,18 +57,19 @@ class OrmHelp
             [$db, $importStr, $structName, $columnStr, $func],
             $fileStr
         );
+        $fileStr = str_replace(['{name}', '{table}'], [$structName, $tableName], $fileStr);
         file_put_contents($file, $fileStr);
     }
 
-    public static function getColumnFuncStr(array $column, string $structName): string
+    public static function getColumnFuncStr(array $column): string
     {
         $columnName = $column['COLUMN_NAME'];
         $field      = self::toName($column['COLUMN_NAME']);
         $fileStr    = self::getOrmString('func');
         $import     = [];
         return str_replace(
-            ['{name}', '{field}', '{column}', '{type}'],
-            [$structName, $field, $columnName, self::getGoType($column, $import)],
+            ['{field}', '{column}', '{type}'],
+            [$field, $columnName, self::getGoType($column, $import)],
             $fileStr
         );
     }
