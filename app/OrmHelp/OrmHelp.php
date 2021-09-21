@@ -130,9 +130,10 @@ str;
                 $got = "{$column['DATA_TYPE']}({$column['NUMERIC_PRECISION']})";
                 break;
         }
-        if (strpos('unsigned', $column['COLUMN_TYPE'])) {
+        if (strpos($column['COLUMN_TYPE'], 'unsigned')) {
             $got = $got.' unsigned';
         }
+
         return $got;
     }
 
@@ -164,7 +165,7 @@ str;
                 $got = 'string';
                 break;
         }
-        if (strpos('unsigned', $colType)) {
+        if (strpos($column['COLUMN_TYPE'], 'unsigned')) {
             $got = 'u'.$got;
         }
 
