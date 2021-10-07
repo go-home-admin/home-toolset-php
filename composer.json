@@ -1,20 +1,21 @@
 {
-    "name": "cyz-home/home-toolset-php",
-    "autoload": {
-        "psr-4": {
-            "App\\": "app/",
-            "GoLang\\Parser\\": "golang-parser/src"
-        }
-    },
-    "authors": [
-        {
-            "name": "cyz-home",
-            "email": "2206582181@qq.com"
-        }
-    ],
-    "require": {
-        "symfony/console": "^5.3",
-        "ext-json": "*",
-        "ctfang/proto-parser": "^0.0.2"
+  "name": "cyz-home/home-toolset-php",
+  "autoload": {
+    "psr-4": {
+      "App\\": "app/",
+      "GoLang\\Parser\\": "golang-parser/src"
     }
+  },
+  "authors": [
+    {
+      "name": "cyz-home",
+      "email": "2206582181@qq.com"
+    }
+  ],
+  "require": {
+    "symfony/console": "^5.3",
+    "ext-json": "*",
+    "ctfang/proto-parser": "^0.0.2",
+    "ext-mysqli": "*"
+  }
 }

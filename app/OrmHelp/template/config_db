@@ -1,0 +1,8 @@
+package {package}
+
+import "gorm.io/gorm"
+
+func DB() *gorm.DB {
+	panic("生成orm文件后, 没有实现DB函数, 以使orm能明确使用具体链接\n请修改config_db.go文件")
+	return nil
+}
