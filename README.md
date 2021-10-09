@@ -53,12 +53,12 @@ func InitializeNewkernelProvider() *kernel {
 
 # proto自定义标签
 ~~~~
-// proto文件顶部注释, 全部json标签后都统一加上bson标签
-// @JsonExt("bson")
+// proto文件顶部注释, 全部struct标签后都统一加上bson标签
+// @Tag("bson") 和 @Tag("bson", "{name}") 等价
 
 // 属性标签
 message ApiDemoHomeRequest {
-  // @JsonExt("gorm", "primaryKey")
+  // @Tag("gorm", "primaryKey")
   int64 id = 1;
 }
 ~~~~
