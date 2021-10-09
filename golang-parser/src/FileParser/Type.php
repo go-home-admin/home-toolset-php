@@ -117,14 +117,16 @@ class Type extends FileParser
                 $tagStr = trim($tempAttr[4], '`');
                 $tagArr = [];
                 for ($i = 0; $i < 20; $i++) {
-                    $tagStr = trim($tagStr, '');
+                    $tagStr  = trim($tagStr, '');
                     $index   = strpos($tagStr, ':');
-                    $tagName = substr($tagStr, 0, $index);
-                    $tagStr  = substr($tagStr, $index + 1);
-                    $tagValue = StringHelp::cutChar('"','"',$tagStr);
-                    $tagStr  = substr($tagStr, strlen($tagValue));
+                    $tagName = trim(substr($tagStr, 0, $index));
+                    if ($tagName) {
+                        $tagStr   = substr($tagStr, $index + 1);
+                        $tagValue = GolangToArray::cutChar($tagStr);
+                        $tagStr   = substr($tagStr, strlen($tagValue));
 
-                    $tagArr[$tagName] = trim($tagValue, '"');
+                        $tagArr[$tagName] = trim($tagValue, '"');
+                    }
                 }
                 $attr->setTags($tagArr);
                 $attr->setTagString($tagStr);

@@ -17,6 +17,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class ProtocCommand extends Command
 {
+    // 检查go文件, 符合json扩展标签
+    protected $tagStr = '@Tag';
+
     /**
      * @return \App\Commands\ProtocCommand
      */
@@ -177,18 +180,15 @@ class ProtocCommand extends Command
         }
     }
 
-    // 检查go文件, 符合json扩展标签
-
     protected function jsonExtWith(string $dirCheck)
     {
         $goParser    = new GolangParser();
-        $dirGenerate = [];
         foreach (DirsHelp::getDirs($dirCheck, 'go') as $file) {
             if (!strpos($file, ".pb.go")) {
                 continue;
             }
             $context = file_get_contents($file);
-            if (!strpos($context, '@JsonExt')) {
+            if (!strpos($context, $this->tagStr)) {
                 continue;
             }
 
@@ -207,7 +207,7 @@ class ProtocCommand extends Command
 
                     if ($fileJsonExt || $typeJsonExt || $attrJsonExt) {
                         foreach ($attribute->getTags() as $name => $tag) {
-                            if ($name === 'json') {
+                            if ($name === 'protobuf') {
                                 $old = $new = $name.':"'.$tag.'"';
                                 foreach ([$attrJsonExt, $typeJsonExt, $fileJsonExt] as $ext) {
                                     if ($ext && !isset($replace[$old])) {
@@ -243,6 +243,12 @@ class ProtocCommand extends Command
 
         $arr     = explode(',', $tag);
         $tagName = reset($arr);
+        foreach ($arr as $item) {
+            $itemArr     = explode('=', $item);
+            if (count($itemArr)==2 && $itemArr[0]=='name') {
+                $tagName = $itemArr[1];
+            }
+        }
         return str_replace(
             ['{name}'],
             [$tagName],
@@ -252,10 +258,10 @@ class ProtocCommand extends Command
 
     protected function getJsonExt(string $doc): array
     {
-        if (!strpos($doc, '@JsonExt')) {
+        if (!strpos($doc, $this->tagStr)) {
             return [];
         }
-        $str      = StringHelp::cutStr("@JsonExt(", ")", $doc);
+        $str      = StringHelp::cutStr($this->tagStr . "(", ")", $doc);
         $tagName  = StringHelp::cutChar('"', '"', $str);
         $tagValue = StringHelp::cutChar('"', '"', substr($str, strlen($tagName)));
 

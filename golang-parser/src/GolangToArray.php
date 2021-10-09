@@ -171,4 +171,44 @@ class GolangToArray
     {
         return $this->array;
     }
+
+
+    /**
+     * 单字符，按块切割
+     * @param  string  $begin
+     * @param  string  $end
+     * @param  string  $str
+     * @return string
+     */
+    public static function cutChar(string $str, string $begin = '"', string $end = '"'): string
+    {
+        $firstHas = false;
+        $count    = 0;
+        $start    = 0;
+
+        $stop = $start;
+        for ($i = 0; $i < strlen($str); $i++) {
+            $temp = $str[$i];
+            switch ($temp) {
+                case $begin:
+                    if (!$firstHas) {
+                        $start    = $i;
+                        $firstHas = true;
+                        $count++;
+                    } elseif ($end == $temp) {
+                        $count--;
+                    }
+                    break;
+                case $end:
+                    $count--;
+                    break;
+            }
+            if ($firstHas && $count <= 0) {
+                $stop = $i;
+                break;
+            }
+        }
+
+        return mb_substr($str, $start, $stop - $start + 1);
+    }
 }
