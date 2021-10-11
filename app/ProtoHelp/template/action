@@ -2,8 +2,8 @@ package {package}
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/go-home-admin/home/app/providers"
-	"github.com/go-home-admin/home/generate/proto/{proto_package}"
+	"{gomod}/app/providers"
+	"{gomod}/generate/proto/{proto_package}"
 )
 
 // {name} {doc}

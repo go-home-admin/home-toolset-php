@@ -4,6 +4,7 @@
 namespace App\ProtoHelp;
 
 
+use App\Go;
 use ProtoParser\FileParser\Service\Rpc;
 use ProtoParser\FileParser\Service\Service;
 use ProtoParser\ProtoParser;
@@ -46,11 +47,11 @@ class GenCode
         return str_replace(
             [
                 '{package}', '{service}', '{name}', '{doc}', '{proto_package}', '{req}',
-                '{resp}', '{route_help}'
+                '{resp}', '{route_help}', '{gomod}'
             ],
             [
                 $package, $service, $name, $doc, $parser->getPackage()->getValue(), $rpc->getParameter(),
-                $rpc->getResponse(), $routeHelp
+                $rpc->getResponse(), $routeHelp, Go::getModule()
             ],
             self::$action
         );
