@@ -58,6 +58,7 @@ class Type extends FileParser
             if ($str == PHP_EOL) {
                 if ($tempAttr) {
                     $this->setAttr($tempAttr, $doc);
+                    $doc = '';
                 }
 
                 $tempAttr = [];
@@ -66,7 +67,7 @@ class Type extends FileParser
                     if (substr($str, 0, 2) != "//") {
                         $tempAttr[] = $str;
                     } else {
-                        $doc = $str;
+                        $doc .= $str;
                     }
                 }
             }

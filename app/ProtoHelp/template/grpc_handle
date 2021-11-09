@@ -1,0 +1,14 @@
+// 不允许编辑本函数
+package {package}
+
+import (
+	context "context"
+	"{module}/app/common"
+	"{module}/app/common/auth"
+	"{module}/app/http/{api_package}/{controller}"
+	"{module}/generate/proto/{api_package}"
+	g "{module}/generate/proto/grpc/{api_package}_grpc"
+)
+
+{struct}
+

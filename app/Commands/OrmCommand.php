@@ -23,7 +23,7 @@ class OrmCommand extends Command
     protected $config = [];
 
     /**
-     * @return \App\Commands\BeanCommand
+     * @return \App\Commands\OrmCommand|void
      */
     protected function configure()
     {

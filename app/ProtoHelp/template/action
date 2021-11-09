@@ -2,12 +2,13 @@ package {package}
 
 import (
 	"github.com/gin-gonic/gin"
+	"{gomod}/app/common/auth"
 	"{gomod}/app/providers"
-	"{gomod}/generate/proto/{proto_package}"
+	"{gomod}/generate/proto/{impload_package}"
 )
 
 // {name} {doc}
-func (receiver *Controller) {name}(req *{proto_package}.{req}, ctx *gin.Context) (*{proto_package}.{resp}, error) {
+func (receiver *Controller) {name}(req *{proto_package}.{req}, ctx *auth.Context) (*{proto_package}.{resp}, error) {
     // TODO 这里写业务
 	return &{proto_package}.{resp}{}, nil
 }
@@ -23,7 +24,7 @@ func (receiver *Controller) GinHandle{name}(ctx *gin.Context) {
 		return
 	}
 
-	resp, err := receiver.{name}(req, ctx)
+	resp, err := receiver.{name}(req, auth.NewContext(ctx))
 	if err != nil {
 		providers.ErrorResponse(ctx, err)
 		return

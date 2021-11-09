@@ -1,0 +1,9 @@
+package {controller}
+
+import "{gomodule}/app/entity/game_background"
+
+// Controller @Bean
+// {controller_doc}
+type Controller struct {
+    orm *game_background.{table_orm} `inject:""`
+}

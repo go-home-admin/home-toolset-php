@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package controllers;
+
+import "methods.proto";
+import "service.proto";
+
+option go_package = "/controllers";
+
+service Home {
+  // 测试组的路由
+  option (http.Route) = "test";
+
+  // 获取首页信息
+  // 更加复杂的描述内容,123432
+  // 更加复杂的描述内容,123432fdsafd
+  // 更加复杂的描述内容,fdsaf
+  // 更加复杂的描述内容,1234fd32
+  // f
+  rpc Index(HomeRequest)returns(HomeResponse){
+    option (http.Get) = "/";
+  }
+
+  // 获取首页信息
+  rpc Index2(HomeRequest)returns(HomeResponse){
+    option (http.Post) = "/index";
+  }
+
+  // 忽略浏览器的空请求
+  rpc Favicon(HomeRequest)returns(Null){
+    option (http.Get) = "/favicon.ico";
+  }
+
+  // Oss授权
+  // 发动机撒浪费；觉得你撒；附近的撒浪费几点上课啦；附近收到啦；
+  rpc Oss(OssRequest)returns(OssResponse){
+    option (http.Get) = "/oss/sts";
+  }
+}
+
+message HomeRequest {
+  // 用户id
+  int32 user_id = 3;
+  bool boolean = 4;
+  bytes str = 5;
+}
+
+message HomeResponse {
+  string version = 1;
+  int64 time = 2;
+}
+
+message OssRequest {
+  string token = 1;
+}
+
+message OssResponse {
+  int64 StatusCode = 1;
+  string AccessKeyId = 2;
+  string AccessKeySecret = 3;
+  string SecurityToken = 4;
+  string Expiration = 5;
+}
+
+message Null {
+
+}

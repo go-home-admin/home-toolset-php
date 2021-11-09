@@ -4,6 +4,7 @@
 namespace App\Commands;
 
 
+use App\ProtoHelp\MakeGrpc;
 use App\ProtoHelp\Proto;
 use ProtoParser\DirsHelp;
 use ProtoParser\ProtoParser;
@@ -26,6 +27,11 @@ class RouteCommand extends Command
                 InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY,
                 "依赖proto路径"
             )
+            ->addOption(
+                "grpc", null,
+                InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY,
+                "对service转grpc中间文件架列表"
+            )
             ->setDescription("生成路由源码");
     }
 
@@ -34,11 +40,47 @@ class RouteCommand extends Command
         $this->input  = $input;
         $this->output = $output;
 
+        foreach (scandir(HOME_PATH.'/routes') as $file) {
+            if (!in_array($file, ['.', '..', '.gitignore'])) {
+                unlink(HOME_PATH.'/routes/'.$file);
+            }
+        }
+
         $help = $this->readAllProtoc();
         $help->makeRoute();
         $help->makeRouteConfig();
 
+        $grpcList = $input->getOption("grpc");
+        if ($grpcList) {
+            // 如果有grpc选项, 同时生成grpc调用代码
+            $this->makeGrpc($help, $grpcList);
+        }
+
         return Command::SUCCESS;
+    }
+
+    private function makeGrpc(Proto $help, array $grpcList)
+    {
+        if (!$grpcList){
+            return;
+        }
+
+        $pars = [];
+        foreach ($grpcList as $path) {
+            $path = HOME_PATH.'/protobuf/'.$path;
+            foreach ($help->getAllPackage() as $pack=>$arr){
+                if ( strpos($pack, $path)===0 ) {
+                    foreach ($arr as $item){
+                        $pars[] = $item;
+                    }
+                }
+            }
+        }
+        unset($item, $path, $grpcList, $arr, $pack);
+        /** @var ProtoParser $proto */
+        foreach ($pars as $proto){
+            MakeGrpc::makeGrpcService($proto);
+        }
     }
 
     private function readAllProtoc(): Proto

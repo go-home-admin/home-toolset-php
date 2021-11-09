@@ -5,9 +5,13 @@ namespace App\Commands;
 
 
 use App\Go;
+use App\ProtoHelp\MakeGrpc;
+use App\ProtoHelp\Proto;
 use GoLang\Parser\GolangParser;
 use GoLang\Parser\GolangToArray;
 use ProtoParser\DirsHelp;
+use ProtoParser\ProtoParser;
+use ProtoParser\ProtoToArray;
 use ProtoParser\StringHelp;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -44,6 +48,11 @@ class ProtocCommand extends Command
                 InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY,
                 "这个参数会在系统protoc命令原因附加"
             )
+            ->addOption(
+                "grpc", null,
+                InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY,
+                "对service转grpc中间文件架列表"
+            )
             ->setHelp("拼接protoc命令所需参数");
     }
 
@@ -57,10 +66,18 @@ class ProtocCommand extends Command
         $protobuf   = $this->getProtobuf($input);
         $goOut      = $this->getGoOut($input);
         $protoPaths = $this->getProtoPath($input);
+        $tempOut    = dirname($goOut)."/temp";
 
-        $protocPaths = $this->getProtobufDir($protobuf);
-        $tempOut     = dirname($goOut)."/temp";
-
+        $protocPaths  = $this->getProtobufDir($protobuf);
+        $grpcList     = $input->getOption("grpc");
+        $grpcPathList = [];
+        if ($grpcList) {
+            // 删除上次生成的目录
+            system("rm -rf ".HOME_PATH."/generate/grpc/");
+            $grpcPathList = $this->grpc($protocPaths, $grpcList);
+        }
+        unset($grpcList);
+        // api类型的protoc
         foreach ($protocPaths as $dir) {
             $command = "protoc --proto_path={$dir}";
             foreach ($protoPaths as $protoPath) {
@@ -72,18 +89,78 @@ class ProtocCommand extends Command
                 $command .= " --proto_path={$protoPath}";
             }
             $this->makeDir($tempOut);
+            if (isset($grpcPathList[$dir])) {
+                $commandGrpc = $command;
+                $commandGrpc .= " --proto_path={$grpcPathList[$dir]}";
+                $commandGrpc .= " --go_out=plugins=grpc:{$tempOut}";
+                $commandGrpc .= " {$grpcPathList[$dir]}/*.proto";
+                echo($commandGrpc), "\n";
+                system($commandGrpc);
+            }
+
             $command .= " --go_out={$tempOut}";
             $command .= " {$dir}/*.proto";
             echo($command), "\n";
             system($command);
         }
+
         $module = Go::getModule();
+        // 清空旧目录
         system("rm -rf {$goOut}");
-        $this->jsonExtWith($tempOut);
         rename($tempOut.'/'.$module."/generate/proto", $goOut);
+        // 删除临时目录
         system("rm -rf {$tempOut}");
+        $this->jsonExtWith($goOut);
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * @param  array  $protocPaths  需要执行的目录
+     * @param  array  $grpcList
+     * @return array
+     */
+    protected function grpc(array $protocPaths, array $grpcList): array
+    {
+        $parser = new ProtoParser();
+        $got    = [];
+        foreach ($protocPaths as $protocPath) {
+            foreach (scandir($protocPath) as $file) {
+                if (in_array($file, ['.', '..']) || pathinfo($file, PATHINFO_EXTENSION) != 'proto') {
+                    continue;
+                }
+                $file = $protocPath.'/'.$file;
+                $file = realpath($file);
+
+                $optPath = $this->getOpt($file);
+                if (!in_array($optPath, $grpcList)) {
+                    continue;
+                }
+
+                $content     = file_get_contents($file);
+                $parserToArr = new ProtoToArray($content);
+                $fileParser  = $parser->parser($parserToArr, $file);
+
+                $genRpcDir = MakeGrpc::makeProtoFile($fileParser);
+                if ($genRpcDir) {
+                    $got[$protocPath] = $genRpcDir;
+                }
+            }
+        }
+        return $got;
+    }
+
+    /**
+     * 第一个目录
+     * @param  string  $file
+     * @return string
+     */
+    protected function getOpt(string $file): string
+    {
+        $arr = explode(HOME_PATH.'/protobuf/', dirname($file));
+        $arr = end($arr);
+        $arr = explode('/', $arr);
+        return reset($arr);
     }
 
     protected function getProtobufDir($protobuf): array
@@ -137,7 +214,7 @@ class ProtocCommand extends Command
     protected function getProtoPath(InputInterface $input): array
     {
         $got        = [
-            $this->getHomePath('./protobuf'),
+            // $this->getHomePath('./protobuf'),
             $this->getHomePath('./protobuf/common/http'),
         ];
         $protoPaths = $input->getOption("proto_path");
@@ -182,70 +259,92 @@ class ProtocCommand extends Command
 
     protected function jsonExtWith(string $dirCheck)
     {
-        $goParser    = new GolangParser();
         foreach (DirsHelp::getDirs($dirCheck, 'go') as $file) {
-            if (!strpos($file, ".pb.go")) {
+            $md5      = md5_file($file);
+            $info     = pathinfo($file);
+            $dirname  = $info['dirname'];
+            $basename = $info['basename'];
+
+            $cacheDir = str_replace([HOME_PATH.'/generate/proto'], [HOME_PATH.'/generate/proto_cache'], $dirname);
+            if (!is_dir($cacheDir)) {
+                mkdir($cacheDir, 0755, true);
+            }
+            $cacheFile = $cacheDir.'/'.$basename.'_'.$md5;
+            if (file_exists($cacheFile)) {
+                file_put_contents($file, file_get_contents($cacheFile));
                 continue;
             }
-            $context = file_get_contents($file);
-            if (!strpos($context, $this->tagStr)) {
-                continue;
-            }
+            $this->updateExt($file);
+            file_put_contents($cacheFile, file_get_contents($file));
+        }
+    }
 
-            $goArr  = new GolangToArray($file, $context);
-            $golang = $goParser->parser($goArr);
+    public function updateExt(string $file)
+    {
+        $goParser = new GolangParser();
+        if (!strpos($file, ".pb.go")) {
+            return;
+        }
+        $context = file_get_contents($file);
+        if (!strpos($context, $this->tagStr)) {
+            return;
+        }
 
-            $fileJsonExt = $this->getJsonExt($golang->getPackageDoc());
-            foreach ($golang->getType() as $type) {
-                $doc         = $type->getDoc();
-                $typeJsonExt = $this->getJsonExt($doc);
-                $typeString  = $goArr->getFileString($type->getStartOffset(), $type->getEndOffset());
-                $replace     = [];
-                foreach ($type->getAttributes() as $attribute) {
-                    $doc         = $attribute->getDoc();
-                    $attrJsonExt = $this->getJsonExt($doc);
+        $goArr  = new GolangToArray($file, $context);
+        $golang = $goParser->parser($goArr);
 
-                    if ($fileJsonExt || $typeJsonExt || $attrJsonExt) {
-                        foreach ($attribute->getTags() as $name => $tag) {
-                            if ($name === 'protobuf') {
-                                $old = $new = $name.':"'.$tag.'"';
-                                foreach ([$attrJsonExt, $typeJsonExt, $fileJsonExt] as $ext) {
-                                    if ($ext && !isset($replace[$old])) {
-                                        $new = $this->getExtStr($name, $tag, $ext);
+        $fileJsonExt = $this->getJsonExt($golang->getPackageDoc());
+        foreach ($golang->getType() as $type) {
+            $doc         = $type->getDoc();
+            $typeJsonExt = $this->getJsonExt($doc);
+            $typeString  = $goArr->getFileString($type->getStartOffset(), $type->getEndOffset());
+            $replace     = [];
+            foreach ($type->getAttributes() as $attribute) {
+                $doc         = $attribute->getDoc();
+                $attrJsonExt = $this->getJsonExt($doc);
+                $run         = [];
+                if ($fileJsonExt || $typeJsonExt || $attrJsonExt) {
+                    foreach ($attribute->getTags() as $name => $tag) {
+                        if ($name === 'protobuf') {
+                            $old = $new = $name.':"'.$tag.'"';
+                            foreach ([$attrJsonExt, $typeJsonExt, $fileJsonExt] as $exts) {
+                                foreach ($exts as $ext) {
+                                    if ($ext && !isset($replace[$old]) && !isset($run[$ext['name']])) {
+                                        $new               = $this->getExtStr($tag, $ext, $new);
+                                        $run[$ext['name']] = true;
                                     }
                                 }
-                                if ($old != $new) {
-                                    $replace[$old] = $new;
-                                }
+                            }
+                            if ($old != $new) {
+                                $replace[$old] = $new;
                             }
                         }
                     }
                 }
-                if ($replace) {
-                    $newTypeString = str_replace(array_keys($replace), array_values($replace), $typeString);
-                    $context       = str_replace($typeString, $newTypeString, $context);
-                }
             }
-
-            file_put_contents($file, $context);
+            if ($replace) {
+                $newTypeString = str_replace(array_keys($replace), array_values($replace), $typeString);
+                $context       = str_replace($typeString, $newTypeString, $context);
+            }
         }
+
+        file_put_contents($file, $context);
     }
 
-    protected function getExtStr(string $name, string $tag, array $ext): string
+    protected function getExtStr(string $tag, array $ext, string $old): string
     {
         $extName  = $ext['name'];
         $extValue = $ext['value'];
         if (!$extValue) {
             $extValue = '{name}';
         }
-        $old = $name.':"'.$tag.'"';
         $new = "{$old} {$extName}:\"{$extValue}\"";
 
         $arr     = explode(',', $tag);
         $tagName = reset($arr);
         foreach ($arr as $item) {
-            $itemArr     = explode('=', $item);
-            if (count($itemArr)==2 && $itemArr[0]=='name') {
+            $itemArr = explode('=', $item);
+            if (count($itemArr) == 2 && $itemArr[0] == 'name') {
                 $tagName = $itemArr[1];
             }
         }
@@ -261,13 +360,22 @@ class ProtocCommand extends Command
         if (!strpos($doc, $this->tagStr)) {
             return [];
         }
-        $str      = StringHelp::cutStr($this->tagStr . "(", ")", $doc);
-        $tagName  = StringHelp::cutChar('"', '"', $str);
-        $tagValue = StringHelp::cutChar('"', '"', substr($str, strlen($tagName)));
+        $got    = [];
+        $docArr = explode("//", $doc);
+        foreach ($docArr as $doc) {
+            if (strpos($doc, $this->tagStr) === false) {
+                continue;
+            }
+            $str      = StringHelp::cutStr($this->tagStr."(", ")", $doc);
+            $tagName  = StringHelp::cutChar('"', '"', $str);
+            $tagValue = StringHelp::cutChar('"', '"', substr($str, strlen($tagName)));
 
-        $tagName  = trim($tagName, '"');
-        $tagValue = trim($tagValue, '"');
+            $tagName  = trim($tagName, '"');
+            $tagValue = trim($tagValue, '"');
 
-        return ['name' => $tagName, 'value' => $tagValue];
+            $got[] = ['name' => $tagName, 'value' => $tagValue];
+        }
+
+        return $got;
     }
 }

@@ -22,8 +22,13 @@ class Proto
     {
         $this->protoParser = $protoParser;
         foreach ($this->protoParser->getAllProto() as $protoParser) {
-            $this->packageProtoParser[$protoParser->getPackage()->getValue()][$protoParser->file] = $protoParser;
+            $this->packageProtoParser[dirname($protoParser->file)][$protoParser->file] = $protoParser;
         }
+    }
+
+    public function getAllPackage()
+    {
+        return $this->packageProtoParser;
     }
 
     public function makeRouteConfig()
@@ -63,6 +68,7 @@ class Proto
             }
 
             asort($imports);
+            $package   = str_replace(['/'], ['_'], $package);
             $routeFile = HOME_PATH."/routes/{$package}_gen.go";
             $outFile   = GenCode::getRouteFile($imports, $package, $structs);
             $outGroup  = GenCode::getRouteGroup($package, $structs);
@@ -105,15 +111,31 @@ class Proto
                         foreach ($rpc->getOptions() as $type => $option) {
                             $actionFile = $controllerPath.'/'.StringHelp::toUnderScore($rpc->getName()).'_action.go';
                             if (!file_exists($actionFile)) {
-                                $outActionText = GenCode::getAction($parser, $service, $rpc);
+                                $outActionText = GenCode::getAction($parser, $service, $rpc, $package);
                                 file_put_contents($actionFile, $outActionText);
                                 echo "写入路由函数 {$actionFile} ", PHP_EOL;
                             }
                         }
                     }
+                    exec("cd {$controllerPath} && git add .");
                 }
             }
         }
+    }
+
+    public function getPackageWithHome(ProtoParser $parser): string
+    {
+        $file = $parser->file;
+        $arr  = explode(HOME_PATH.'/protobuf/', $file);
+        if (count($arr) == 2) {
+            $file    = $arr[1];
+            $file    = pathinfo($file);
+            $package = $file['dirname'];
+        } else {
+            $package = $parser->getPackage()->getValue();;
+        }
+
+        return $package;
     }
 
     /**
@@ -123,7 +145,7 @@ class Proto
     public function getRouteDir(): array
     {
         $got = [];
-        foreach ($this->packageProtoParser as $package => $arr) {
+        foreach ($this->packageProtoParser as $arr) {
             /** @var ProtoParser $proto */
             foreach ($arr as $proto) {
                 $services = $proto->getService();
@@ -131,7 +153,8 @@ class Proto
                     foreach ($services->getArray() as $service) {
                         $opts = $service->getOptions();
                         if (isset($opts['http.RouteGroup'])) {
-                            $got[$package][$proto->file] = $proto;
+                            $filePackage                     = $this->getPackageWithHome($proto);
+                            $got[$filePackage][$proto->file] = $proto;
                         }
                     }
                 }

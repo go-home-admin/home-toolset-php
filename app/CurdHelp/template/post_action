@@ -1,0 +1,41 @@
+package {controller}
+
+import (
+    "errors"
+	"github.com/gin-gonic/gin"
+	"{gomodule}/app/common"
+	"{gomodule}/app/providers"
+	"{gomodule}/generate/proto/{app}/{model}"
+)
+
+// Post  创建新数据 - {controller_doc}
+func (receiver *Controller) Post(req *{model}.{controller_name}PostRequest, ctx *auth.Context) (*{model}.{controller_name}PostResponse, error) {
+    id := int32(common.GetParamId(ctx))
+	has := receiver.orm.WhereId(id).First()
+	if has == nil {
+		return nil, errors.New("数据不存在")
+	}
+	receiver.orm.WhereId(id).Updates(map[string]interface{}{
+{update_str}
+	})
+	return &{model}.{controller_name}PostResponse{}, nil
+}
+
+// GinHandlePost gin原始路由处理
+func (receiver *Controller) GinHandlePost(ctx *gin.Context) {
+	req := &{model}.{controller_name}PostRequest{}
+	err := ctx.ShouldBind(req)
+
+	if err != nil {
+		providers.ErrorRequest(ctx, err)
+		return
+	}
+
+	resp, err := receiver.Post(req, auth.NewContext(ctx))
+	if err != nil {
+		providers.ErrorResponse(ctx, err)
+		return
+	}
+
+	providers.SuccessResponse(ctx, resp)
+}

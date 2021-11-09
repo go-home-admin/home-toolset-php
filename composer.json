@@ -15,7 +15,7 @@
   "require": {
     "symfony/console": "^5.3",
     "ext-json": "*",
-    "ctfang/proto-parser": "^0.0.2",
+    "ctfang/proto-parser": "^v0.0.6",
     "ext-mysqli": "*"
   }
 }

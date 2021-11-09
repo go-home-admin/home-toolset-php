@@ -1,0 +1,65 @@
+// @Tag("form")
+syntax = "proto3";
+
+package {model};
+
+import "http_config.proto";
+
+option go_package = "{gomodule}/generate/proto/{app}/{model}";
+
+// {controller_doc}资源控制器
+service {controller_name} {
+	// 需要登陆
+	option (http.RouteGroup) = "login";
+
+	// {controller_doc}列表
+	rpc Get({controller_name}GetRequest) returns ({controller_name}GetResponse){
+		option (http.Get) = "/{model}/{table_name}";
+	}
+	// {controller_doc}创建
+	rpc Post({controller_name}PostRequest) returns ({controller_name}PostResponse){
+		option (http.Post) = "/{model}/{table_name}";
+	}
+	// {controller_doc}更新
+	rpc Put({controller_name}PutRequest) returns ({controller_name}PutResponse){
+		option (http.Put) = "/{model}/{table_name}/:id";
+	}
+	// {controller_doc}删除
+	rpc Del({controller_name}PutRequest) returns ({controller_name}PutResponse){
+		option (http.Delete) = "/{model}/{table_name}/:id";
+	}
+}
+
+message {controller_name}GetRequest {
+	// 列表第几页, 默认1
+	uint32 page  = 1;
+	// 每页多少条数据
+	uint32 limit = 2;
+}
+
+message {controller_name}GetResponse {
+	// 数据列表
+	repeated {table_info_name} list = 1;
+	// 符合条件总数量, 计算多少页
+	uint32 total = 2;
+}
+
+message {controller_name}PostRequest {
+{proto_str}
+}
+message {controller_name}PostResponse {
+	// 提示语
+	string tip = 1;
+}
+
+message {controller_name}PutRequest {
+{proto_str}
+}
+message {controller_name}PutResponse {
+	// 提示语
+	string tip = 1;
+}
+
+message {table_info_name} {
+{proto_str}
+}

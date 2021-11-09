@@ -1,0 +1,22 @@
+func (receiver *{name}) With{FuncName}() *{name} {
+	con := receiver.Model()
+	con.wheresSession = append(con.wheresSession, func() {
+		con.{other} = make([]*{other_orm}, 0)
+		ids := con.list.GetTo{source_key}Distinct()
+		if len(ids) > 0 {
+			others := InitializeNew{other_orm}Provider().WhereIn("{other_key}", ids).Find()
+			for _, source := range con.list {
+				for _, other := range others {
+					if other.{other_key_by_camel} == source.{source_key} {
+						source.{other} = append(source.{other}, other)
+					}
+				}
+			}
+		}
+	})
+	return con
+}
+
+func (receiver *{name}) GetWith{FuncName}() []*{other_orm} {
+	return receiver.{other}
+}

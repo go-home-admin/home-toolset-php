@@ -1,0 +1,306 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is a sample server Petstore server.  You can find out more about Swagger at [http://swagger.io](http://swagger.io) or on [irc.freenode.net, #swagger](http://swagger.io/irc/).  For this sample, you can use the api key `special-key` to test the authorization filters.",
+        "version": "1.0.5",
+        "title": "Swagger Petstore",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "email": "apiteam@swagger.io"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        }
+    },
+    "host": "127.0.0.1",
+    "basePath": "/v2",
+    "tags": [
+        {
+            "name": "test",
+            "description": " 测试组的路由"
+        }
+    ],
+    "schemes": [
+        "https",
+        "http"
+    ],
+    "paths": {
+        "/": {
+            "get": {
+                "tags": [
+                    "test"
+                ],
+                "summary": " 获取首页信息",
+                "description": " 获取首页信息\n\n 更加复杂的描述内容,123432\n\n 更加复杂的描述内容,123432fdsafd\n\n 更加复杂的描述内容,fdsaf\n\n 更加复杂的描述内容,1234fd32\n\n f",
+                "consumes": [
+                    "application/json",
+                    "multipart/form-data",
+                    "application/xml"
+                ],
+                "produces": [
+                    "application/json",
+                    "multipart/form-data",
+                    "application/xml"
+                ],
+                "parameters": [
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "description": " 用户id",
+                        "required": false,
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    {
+                        "name": "boolean",
+                        "in": "query",
+                        "description": "",
+                        "required": false,
+                        "type": "boolean",
+                        "format": "bool"
+                    },
+                    {
+                        "name": "str",
+                        "in": "query",
+                        "description": "",
+                        "required": false,
+                        "type": "string",
+                        "format": "bytes"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/HomeResponse"
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/index": {
+            "post": {
+                "tags": [
+                    "test"
+                ],
+                "summary": " 获取首页信息",
+                "description": " 获取首页信息",
+                "consumes": [
+                    "application/json",
+                    "multipart/form-data",
+                    "application/xml"
+                ],
+                "produces": [
+                    "application/json",
+                    "multipart/form-data",
+                    "application/xml"
+                ],
+                "parameters": [
+                    {
+                        "name": "HomeRequest",
+                        "in": "body",
+                        "description": "",
+                        "required": false,
+                        "schema": {
+                            "$ref": "#/definitions/HomeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/HomeResponse"
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/favicon.ico": {
+            "get": {
+                "tags": [
+                    "test"
+                ],
+                "summary": " 忽略浏览器的空请求",
+                "description": " 忽略浏览器的空请求",
+                "consumes": [
+                    "application/json",
+                    "multipart/form-data",
+                    "application/xml"
+                ],
+                "produces": [
+                    "application/json",
+                    "multipart/form-data",
+                    "application/xml"
+                ],
+                "parameters": [
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "description": " 用户id",
+                        "required": false,
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    {
+                        "name": "boolean",
+                        "in": "query",
+                        "description": "",
+                        "required": false,
+                        "type": "boolean",
+                        "format": "bool"
+                    },
+                    {
+                        "name": "str",
+                        "in": "query",
+                        "description": "",
+                        "required": false,
+                        "type": "string",
+                        "format": "bytes"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/Null"
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/oss/sts": {
+            "get": {
+                "tags": [
+                    "test"
+                ],
+                "summary": " Oss授权",
+                "description": " Oss授权\n\n 发动机撒浪费；觉得你撒；附近的撒浪费几点上课啦；附近收到啦；",
+                "consumes": [
+                    "application/json",
+                    "multipart/form-data",
+                    "application/xml"
+                ],
+                "produces": [
+                    "application/json",
+                    "multipart/form-data",
+                    "application/xml"
+                ],
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "query",
+                        "description": "",
+                        "required": false,
+                        "type": "string",
+                        "format": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/OssResponse"
+                        }
+                    }
+                },
+                "security": []
+            }
+        }
+    },
+    "securityDefinitions": [],
+    "definitions": {
+        "HomeRequest": {
+            "type": "object",
+            "properties": {
+                "user_id": {
+                    "type": "integer",
+                    "format": "int32",
+                    "description": " 用户id"
+                },
+                "boolean": {
+                    "type": "boolean",
+                    "format": "bool",
+                    "description": ""
+                },
+                "str": {
+                    "type": "string",
+                    "format": "bytes",
+                    "description": ""
+                }
+            },
+            "description": ""
+        },
+        "HomeResponse": {
+            "type": "object",
+            "properties": {
+                "version": {
+                    "type": "string",
+                    "format": "string",
+                    "description": ""
+                },
+                "time": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": ""
+                }
+            },
+            "description": ""
+        },
+        "OssRequest": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string",
+                    "format": "string",
+                    "description": ""
+                }
+            },
+            "description": ""
+        },
+        "OssResponse": {
+            "type": "object",
+            "properties": {
+                "StatusCode": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": ""
+                },
+                "AccessKeyId": {
+                    "type": "string",
+                    "format": "string",
+                    "description": ""
+                },
+                "AccessKeySecret": {
+                    "type": "string",
+                    "format": "string",
+                    "description": ""
+                },
+                "SecurityToken": {
+                    "type": "string",
+                    "format": "string",
+                    "description": ""
+                },
+                "Expiration": {
+                    "type": "string",
+                    "format": "string",
+                    "description": ""
+                }
+            },
+            "description": ""
+        },
+        "Null": {
+            "type": "object",
+            "properties": [],
+            "description": ""
+        }
+    },
+    "externalDocs": {
+        "description": "Find out more about Swagger",
+        "url": "http://swagger.io"
+    }
+}

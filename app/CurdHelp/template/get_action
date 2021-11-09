@@ -1,0 +1,45 @@
+package {controller}
+
+import (
+	"github.com/gin-gonic/gin"
+	"{gomodule}/app/providers"
+	"{gomodule}/generate/proto/{app}/{model}"
+)
+
+// Get  列表查询 - {controller_doc}
+func (receiver *Controller) Get(req *{model}.{controller_name}GetRequest, ctx *auth.Context) (*{model}.{controller_name}GetResponse, error) {
+	list, total := receiver.orm.GetPaginate(req.Page, req.Limit)
+
+	responseList := make([]*{model}.{table_info_name}, 0)
+	for _, cp := range list {
+		responseList = append(
+			responseList,
+			&{model}.{table_info_name}{
+{table_copy_api}
+			},
+		)
+	}
+	return &{model}.{controller_name}GetResponse{
+		List:  responseList,
+		Total: uint32(total),
+	}, nil
+}
+
+// GinHandleGet gin原始路由处理
+func (receiver *Controller) GinHandleGet(ctx *gin.Context) {
+	req := &{model}.{controller_name}GetRequest{}
+	err := ctx.ShouldBind(req)
+
+	if err != nil {
+		providers.ErrorRequest(ctx, err)
+		return
+	}
+
+	resp, err := receiver.Get(req, auth.NewContext(ctx))
+	if err != nil {
+		providers.ErrorResponse(ctx, err)
+		return
+	}
+
+	providers.SuccessResponse(ctx, resp)
+}

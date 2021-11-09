@@ -138,17 +138,9 @@ class GolangToArray
         return false;
     }
 
-    protected function mbSplit($string, $len = 1): ?array
+    protected function mbSplit($string): ?array
     {
-        $array  = [];
-        $start  = 0;
-        $strLen = mb_strlen($string);
-        while ($strLen) {
-            $array[] = mb_substr($string, $start, $len, "utf8");
-            $string  = mb_substr($string, $len, $strLen, "utf8");
-            $strLen  = mb_strlen($string);
-        }
-        return $array;
+        return mb_str_split($string);
     }
 
     public function addArray(string $char, int $offset)

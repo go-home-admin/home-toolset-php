@@ -1,0 +1,20 @@
+
+func (a *{ControllerName}) {rpc}(ctx context.Context, request *{api}.{rpcReq}) (*g.{rpcResp}Grpc, error) {
+	resp, err := a.controller.{rpc}(request, auth.NewContextFormGrpc(&ctx))
+
+	if err != nil {
+		if value, ok := err.(*common.LogicError); ok {
+			return &g.{rpcResp}Grpc{
+				Code:    int32(value.Code),
+				Message: value.Error(),
+				Data:    resp,
+			}, err
+		}
+	}
+
+	return &g.{rpcResp}Grpc{
+		Code:    0,
+		Message: "",
+		Data:    resp,
+	}, err
+}

@@ -59,7 +59,8 @@ class SwaggerCommand extends ProtocCommand
     {
         $this->output = $output;
 
-        $protocPaths  = $this->getProtobufDir($this->getProtobuf($input));
+        $protocPaths = $this->getProtobufDir($this->getProtobuf($input));
+        asort($protocPaths);
         $parser       = $this->loadProtoFile(array_merge($protocPaths, $this->getProtoPath($input)));
         $routeService = $this->loadRouteService($parser);
         $routeConfig  = $this->loadRouteConfig();
@@ -185,19 +186,23 @@ dd
                     $useModuleReadme[$routeModule] = $moduleReadme[$routeModule];
 
                     $message = $parser->getMessageWithAll($rpc->getParameter());
-                    switch ($method) {
-                        case "post":
-                            $parameters = $this->toPostParameter($routeModule, $message);
-                            break;
-                        default:
-                            $parameters = $this->toGetParameter($routeModule, $message);
-                            break;
+                    if ($message){
+                        switch ($method) {
+                            case "post":
+                                $parameters = $this->toPostParameter($routeModule, $message);
+                                break;
+                            default:
+                                $parameters = $this->toGetParameter($routeModule, $message);
+                                break;
+                        }
+                        $path->setParameters($parameters);
                     }
-                    $path->setParameters($parameters);
 
                     $message   = $parser->getMessageWithAll($rpc->getResponse());
-                    $responses = $this->toResponse($routeModule, $message);
-                    $path->setResponses(['200' => $responses]);
+                    if ($message){
+                        $responses = $this->toResponse($routeModule, $message);
+                        $path->setResponses(['200' => $responses]);
+                    }
 
                     if (is_array($security)) {
                         $path->setSecurity($security);
@@ -303,7 +308,31 @@ dd
 
     protected function makeSwaggerFile(Swagger $swagger)
     {
-        $json = json_encode($swagger->toArray(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $arr    = $swagger->toArray();
+        $allDef = $arr['definitions'] ?? [];
+        foreach ($allDef as $k => $item) {
+            if (isset($item['properties'])) {
+                foreach ($item['properties'] as $pk=>$property) {
+                    if (isset($property['$ref'])) {
+                        $ref     = $property['$ref'];
+                        $refArr  = explode('/', $ref);
+                        $defTemp = end($refArr);
+
+                        if (!isset($allDef[$defTemp])) {
+                            $kArr = explode('.', $k);
+                            $kf   = reset($kArr).'.'.$defTemp;
+                            if (!isset($allDef[$kf])) {
+                                throw new \Exception("无法找到对应的结构对象. ".$defTemp);
+                            } else {
+                                $arr['definitions'][$k]['properties'][$pk]['$ref'] = str_replace(["/{$defTemp}"], ["/{$kf}"], $ref);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        $json = json_encode($arr, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         file_put_contents($this->getHomePath("/app/http/swagger/doc")."/swagger.json", $json);
     }
 
@@ -354,7 +383,6 @@ dd
         $pars = [];
         foreach ($message->getValues() as $type) {
             if ($type instanceof Message) {
-                $this->output->writeln("<waring>内嵌式message一般不用, 入口或者出口的结构通常多个模块使用</waring>");
                 foreach ($type->getValues() as $type2) {
                     $mType = $type2->getBType();
                     if ($mType == $type2::Base) {
@@ -405,7 +433,7 @@ dd
                     $pars[$type->getName()] = [
                         "type"        => ProtoMessageToSwagger::toSwaggerType($type),
                         "format"      => $type->getType(),
-                        "description" => $type->getDoc(),
+                        "description" => $this->toDoc($type->getDoc()),
                     ];
                 } elseif ($mType & $type::bTypeArray) {
                     // 数组
@@ -414,7 +442,7 @@ dd
                         $lineType               = ProtoMessageToSwagger::toSwaggerType($type);
                         $pars[$type->getName()] = [
                             "type"        => "array",
-                            "description" => $type->getDoc(),
+                            "description" => $this->toDoc($type->getDoc()),
                             "items"       => [
                                 "type" => $lineType,
                             ],
@@ -427,7 +455,7 @@ dd
                         }
                         $pars[$type->getName()] = [
                             "type"        => "array",
-                            "description" => $type->getDoc(),
+                            "description" => $this->toDoc($type->getDoc()),
                             "items"       => [
                                 "\$ref" => "#/definitions/{$messageName}"
                             ],
@@ -448,6 +476,11 @@ dd
         return $definition;
     }
 
+    protected function toDoc(string $doc):string
+    {
+        return str_replace(['//'], ["<br>"], $doc);
+    }
+
     protected function toGetParameter(string $routeModule, Message $message): array
     {
         $got = [];
@@ -461,14 +494,14 @@ dd
             if ($bType == $type::Base) {
                 // proto自带类型
                 $parameter->setName($type->getName());
-                $parameter->setDescription($type->getDoc());
+                $parameter->setDescription($this->toDoc($type->getDoc()));
                 $parameter->setFormat($type->getType());
                 $parameter->setType(ProtoMessageToSwagger::toSwaggerType($type));
             } elseif ($bType & $type::bTypeObject) {
                 // 其他对象引用
                 $lineType = $type->getType();
                 $parameter->setName($type->getName());
-                $parameter->setDescription($type->getDoc());
+                $parameter->setDescription($this->toDoc($type->getDoc()));
 
                 if (in_array($lineType, ProtoType::ALl)) {
                     $lineType = ProtoMessageToSwagger::toSwaggerType($type);

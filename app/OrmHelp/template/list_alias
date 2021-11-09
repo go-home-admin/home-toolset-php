@@ -1,0 +1,23 @@
+func (l {name}List) GetTo{column_name}List() []{column_type} {
+	{column_name}List := make([]{column_type}, 0)
+	for _, d := range l {
+		{column_name}List = append({column_name}List, d.{column_name})
+	}
+	return {column_name}List
+}
+
+func (l {name}List) GetTo{column_name}Map() map[{column_type}]*{name} {
+	{column_name}List := make(map[{column_type}]*{name})
+	for _, d := range l {
+		{column_name}List[d.{column_name}] = d
+	}
+	return {column_name}List
+}
+
+func (l {name}List) GetTo{column_name}Distinct() []{column_type} {
+	{column_name}List := make([]{column_type}, 0)
+    for _, d := range l.GetTo{column_name}Map() {
+        {column_name}List = append({column_name}List, d.{column_name})
+    }
+    return {column_name}List
+}

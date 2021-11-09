@@ -165,8 +165,10 @@ str;
                 $got = 'string';
                 break;
         }
-        if (strpos($column['COLUMN_TYPE'], 'unsigned')) {
-            $got = 'u'.$got;
+        if (!in_array($got , ["float64", "float32"])) {
+            if (strpos($column['COLUMN_TYPE'], 'unsigned')) {
+                $got = 'u'.$got;
+            }
         }
 
         return $got;

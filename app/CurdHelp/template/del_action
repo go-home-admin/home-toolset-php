@@ -1,0 +1,36 @@
+package {controller}
+
+import (
+	"github.com/gin-gonic/gin"
+	"{gomodule}/app/common"
+	"{gomodule}/app/providers"
+	"{gomodule}/generate/proto/{app}/{model}"
+)
+
+// Del  删除数据 - {controller_doc}
+func (receiver *Controller) Del(req *{model}.{controller_name}PutRequest, ctx *auth.Context) (*{model}.{controller_name}PutResponse, error) {
+	id := common.GetParamId(ctx)
+    receiver.orm.Delete(id)
+	return &{model}.{controller_name}PutResponse{
+		Tip: "OK",
+	}, nil
+}
+
+// GinHandleDel gin原始路由处理
+func (receiver *Controller) GinHandleDel(ctx *gin.Context) {
+	req := &{model}.{controller_name}PutRequest{}
+	err := ctx.ShouldBind(req)
+
+	if err != nil {
+		providers.ErrorRequest(ctx, err)
+		return
+	}
+
+	resp, err := receiver.Del(req, auth.NewContext(ctx))
+	if err != nil {
+		providers.ErrorResponse(ctx, err)
+		return
+	}
+
+	providers.SuccessResponse(ctx, resp)
+}

@@ -1,0 +1,17 @@
+{
+    "name": "ctfang/proto-parser",
+    "autoload": {
+        "psr-4": {
+            "ProtoParser\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "ctfang",
+            "email": "2206582181@qq.com"
+        }
+    ],
+  "require": {
+    "ext-json": "*"
+  }
+}

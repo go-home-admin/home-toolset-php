@@ -29,7 +29,7 @@ class GenCode
         return str_replace(['{package}', '{name}', '{filename}'], [$package, $name, $file], self::$controller);
     }
 
-    public static function getAction(ProtoParser $parser, Service $server, Rpc $rpc): string
+    public static function getAction(ProtoParser $parser, Service $server, Rpc $rpc, string $imploadPackage): string
     {
         if (!self::$action) {
             self::$action = file_get_contents(__DIR__.'/template/action');
@@ -47,11 +47,11 @@ class GenCode
         return str_replace(
             [
                 '{package}', '{service}', '{name}', '{doc}', '{proto_package}', '{req}',
-                '{resp}', '{route_help}', '{gomod}'
+                '{resp}', '{route_help}', '{gomod}', '{impload_package}'
             ],
             [
                 $package, $service, $name, $doc, $parser->getPackage()->getValue(), $rpc->getParameter(),
-                $rpc->getResponse(), $routeHelp, Go::getModule()
+                $rpc->getResponse(), $routeHelp, Go::getModule(), $imploadPackage
             ],
             self::$action
         );
@@ -134,15 +134,16 @@ class GenCode
         $controllers = $route = '';
         $groupFunc = [];
         foreach ($all as $package => $structs) {
-            $packageUc = ucfirst($package).'Routes';
+            $packageUc   = ucfirst($package).'Routes';
+            $packageUc   = str_replace(['/'], ['_'], $packageUc);
             $controllers .= "\n\t{$packageUc} *{$packageUc} `inject:\"\"`";
             foreach ($structs as $alias => $struct) {
-                $group = $struct["group"];
+                $group     = $struct["group"];
                 $groupName = self::getGroupName($group);
 
-                if (!isset($groupFunc[$group])) {
-                    // $groupFunc[$group] = "r.mergerRouteMap(),";
-                    $groupFunc[$group][] = "r.{$packageUc}.Get{$groupName}Routes()";
+                $temp = "r.{$packageUc}.Get{$groupName}Routes()";
+                if (!isset($groupFunc[$group][$temp])) {
+                    $groupFunc[$group][$temp] = $temp;
                 }
             }
         }

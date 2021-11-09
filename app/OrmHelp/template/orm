@@ -1,49 +1,192 @@
 package {package}
 
 import (
+    log "github.com/sirupsen/logrus"
     "gorm.io/gorm"{import})
 
 // {name} @Bean
 type {name} struct {
 {column}    db *gorm.DB
+
+	list          {name}List // 列表查询时候赋值
+	wheresSession []func()   // 条件格式组装
 }
 
-func (receiver *{name}) Table() *{name} {
+var {name}Field = struct {field}
+// 空函数，防止上面的字段映射因未调用而报错
+func _() {
+	_ = {name}Field
+}
+
+type {name}List []*{name}
+
+func (receiver *{name}) Model() *{name} {
 	if  receiver.db == nil {
 		return &{name}{
-			db: DB().Table(receiver.TableName()),
+			db: DB().Model(*receiver),
 		}
 	}
 	return receiver
+}
+// 事务过程使用ORM
+func New{name}(txs... *gorm.DB) *{name} {
+	var tx *gorm.DB
+	if len(txs) == 0 {
+		tx = DB()
+	} else {
+		tx = txs[0]
+	}
+	return &{name}{
+		db: tx.Model(&{name}{}),
+	}
+}
+func (receiver *{name}) GetDB() *gorm.DB {
+	return receiver.Model().db
 }
 
 func (receiver *{name}) TableName() string {
 	return "{table}"
 }
 
+// 创建
+func (receiver *{name}) Create(value *{name}) *gorm.DB {
+	con := receiver.Model()
+	return con.db.Create(&value)
+}
+
+func (receiver *{name}) Save() *gorm.DB {
+	con := receiver.Model()
+	return con.db.Save(con)
+}
+
+func (receiver *{name}) Update(column string, value interface{}) *gorm.DB {
+	con := receiver.Model()
+	return con.db.Update(column, value)
+}
+
+func (receiver *{name}) Updates(value interface{}) *gorm.DB {
+	con := receiver.Model()
+	return con.db.Updates(value)
+}
+
+func (receiver *{name}) Delete(conds ...interface{}) *gorm.DB {
+	con := receiver.Model()
+	return con.db.Delete(&{name}{}, conds...)
+}
+
+func (receiver *{name}) Select(query string, args ...interface{}) *{name} {
+	con := receiver.Model()
+	con.db.Select(query, args...)
+	return con
+}
+
+func (receiver *{name}) Where(query interface{}, args ...interface{}) *{name} {
+	con := receiver.Model()
+	con.db.Where(query, args...)
+	return con
+}
+
+func (receiver *{name}) WhereIn(query string, args ...interface{}) *{name} {
+	con := receiver.Model()
+	con.db.Where(query + " IN (?)", args...)
+	return con
+}
+
+func (receiver *{name}) Joins(query string, args ...interface{}) *{name} {
+	con := receiver.Model()
+	con.db.Joins(query, args...)
+	return con
+}
+// Order specify order when retrieve records from database
+//     db.Order("name DESC")
+//     db.Order(clause.OrderByColumn{Column: clause.Column{Name: "name"}, Desc: true})
+func (receiver *{name}) Order(value interface{}) *{name} {
+	con := receiver.Model()
+	con.db.Order(value)
+	return con
+}
+
+func (receiver *{name}) Group(value string) *{name} {
+	con := receiver.Model()
+	con.db.Group(value)
+	return con
+}
+
+func (receiver *{name}) Count(count *int64) *gorm.DB {
+	con := receiver.Model()
+	return con.db.Count(count)
+}
+
 {func}
-func (receiver *{name}) Find(conds ...interface{}) []*{name} {
-	ret := make([]*{name}, 0)
-	receiver.Table().db.Find(&ret, conds...)
-	return ret
+func (receiver *{name}) Find(conds ...interface{}) {name}List {
+	receiver.list = make([]*{name}, 0)
+	tx := receiver.Model().db.Find(&receiver.list, conds...)
+	if tx.Error != nil {
+		log.Error(tx.Error)
+	}
+	if receiver.wheresSession != nil {
+		for _, f := range receiver.wheresSession {
+			f()
+		}
+	}
+	return receiver.list
 }
 
 func (receiver *{name}) First(conds ...interface{}) *{name} {
-	con := receiver.Table()
-	con.db.First(con, conds...)
-	return con
+	con := receiver.Model()
+	data := &{name}{}
+	tx := con.db.First(data, conds...)
+	if tx.Error != nil {
+		log.Error(tx.Error)
+	}
+	if receiver.wheresSession != nil {
+		for _, f := range receiver.wheresSession {
+			f()
+		}
+	}
+	return data
 }
 
 func (receiver *{name}) And(fuc func(table *{name})) *{name} {
 	fuc(receiver)
-	con := receiver.Table()
+	con := receiver.Model()
 	con.db.Where(con.db)
 	return con
 }
 
 func (receiver *{name}) Or(fuc func(table *{name})) *{name} {
 	fuc(receiver)
-	con := receiver.Table()
+	con := receiver.Model()
 	con.db.Or(con.db)
 	return con
+}
+
+
+func (receiver *{name}) Limit(limit int) *{name} {
+	con := receiver.Model()
+	con.db.Limit(limit)
+	return con
+}
+
+func (receiver *{name}) Offset(offset int) *{name} {
+	con := receiver.Model()
+	con.db.Offset(offset)
+	return con
+}
+
+func (receiver *{name}) GetPaginate(page uint32, limit uint32) ({name}List, int64) {
+	var total int64
+	var offset int
+	receiver.Model().db.Count(&total)
+	if total > 0 {
+		receiver.Limit(int(limit))
+		if page > 1 {
+			offset = int((page - 1) * limit)
+		}
+		receiver.Offset(offset)
+		return receiver.Find(), total
+	}
+	// 查询不到数据时候
+	receiver.list = make([]*{name}, 0)
+	return receiver.Find(), total
 }
