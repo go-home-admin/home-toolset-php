@@ -137,7 +137,9 @@ func (receiver *{name}) First(conds ...interface{}) *{name} {
 	data := &{name}{}
 	tx := con.db.First(data, conds...)
 	if tx.Error != nil {
-		log.Error(tx.Error)
+		if tx.Error != gorm.ErrRecordNotFound {
+			log.Error(tx.Error)
+		}
 	}
 	if receiver.wheresSession != nil {
 		for _, f := range receiver.wheresSession {
