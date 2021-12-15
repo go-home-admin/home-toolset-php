@@ -61,12 +61,18 @@ class CurlCommand extends OrmCommand
         if (!$model) {
             $question = new Question('输入代码放到哪个模块下('.$app.'/? 输入问号部分): ');
             $model    = $helper->ask($input, $output, $question);
+            if (trim($model) == '') {
+                $model = '';
+            }
         }
 
         $doc = $input->getOption('doc');
         if (!$doc) {
             $question = new Question('输入模块注释(中文说明): ');
             $doc = $helper->ask($input, $output, $question);
+            if (trim($doc) == '') {
+                $doc = $tableName;
+            }
         }
 
         $controller = $input->getOption('controller');
