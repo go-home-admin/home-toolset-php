@@ -111,6 +111,11 @@ class GoCurd
             mkdir(HOME_PATH.'/protobuf/'.$app.'/'.$model, 0755, true);
         }
         if (!file_exists($fileSave)) {
+            $strProto = self::$orm['proto'];
+            if (!$model) {
+                $strProto = str_replace('{app}/{model}','{app}', $strProto);
+            }
+
             file_put_contents($fileSave, str_replace(
                 [
                     9  => '{app}',
@@ -136,7 +141,7 @@ class GoCurd
                     10 => $controller_doc,
                     11 => Go::getModule(),
                 ],
-                self::$orm['proto']
+                $strProto
             ));
         }
     }
