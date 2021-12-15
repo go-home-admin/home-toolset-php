@@ -4,6 +4,7 @@
 namespace App\CurdHelp;
 
 
+use App\Go;
 use ProtoParser\StringHelp;
 
 class GoCurd
@@ -121,6 +122,7 @@ class GoCurd
                     7  => '{proto_str}',
                     8  => '{table_name}',
                     10 => '{controller_doc}',
+                    11 => '{gomodule}',
                 ],
                 [
                     9  => $app,
@@ -132,6 +134,7 @@ class GoCurd
                     7  => $protoStr,
                     8  => $tableName,
                     10 => $controller_doc,
+                    11 => Go::getModule(),
                 ],
                 self::$orm['proto']
             ));

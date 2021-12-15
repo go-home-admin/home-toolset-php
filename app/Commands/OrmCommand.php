@@ -136,7 +136,13 @@ class OrmCommand extends Command
             $path = realpath(HOME_PATH."/".$path);
         }
         $this->output->writeln("<info>使用配置文件 $path</info>");
-        $this->config = parse_ini_file($path);
+        $this->config = parse_ini_file($path, true, INI_SCANNER_RAW);
+        foreach ($this->config as $value){
+            if (is_array($value)) {
+                $this->config = $value;
+                break;
+            }
+        }
     }
 
 
@@ -152,6 +158,7 @@ class OrmCommand extends Command
         if ($conn->connect_error) {
             die("Connection failed: ".$conn->connect_error);
         }
+        $conn->query('set names utf8');
         /* 连接数据库*/
         $conn->select_db($this->config['dbname']);
         return $conn;

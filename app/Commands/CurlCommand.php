@@ -5,9 +5,8 @@ namespace App\Commands;
 
 
 use App\CurdHelp\GoCurd;
-use App\ProtoHelp\PgSqlToProto;
+use App\ProtoHelp\MysqlToProto;
 use ProtoParser\StringHelp;
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -35,6 +34,7 @@ class CurlCommand extends OrmCommand
             ->addOption("model", "m", InputOption::VALUE_OPTIONAL, "生成的proto目录, 归属模块名称")
             ->addOption("controller", "c", InputOption::VALUE_OPTIONAL, "控制器名称")
             ->addOption("app", "a", InputOption::VALUE_OPTIONAL, "app", 'admin')
+            ->addOption("doc", "", InputOption::VALUE_OPTIONAL, "备注", '')
             ->setHelp("根据mysql结构生成go的curd基础文件");
     }
 
@@ -59,12 +59,15 @@ class CurlCommand extends OrmCommand
 
         $model = $input->getOption('model');
         if (!$model) {
-            $question = new Question('输入代码放到哪个模块下(admin/? 输入问号部分): ');
+            $question = new Question('输入代码放到哪个模块下('.$app.'/? 输入问号部分): ');
             $model    = $helper->ask($input, $output, $question);
         }
 
-        $question = new Question('输入模块注释(中文说明): ');
-        $doc      = $helper->ask($input, $output, $question);
+        $doc = $input->getOption('doc');
+        if (!$doc) {
+            $question = new Question('输入模块注释(中文说明): ');
+            $doc = $helper->ask($input, $output, $question);
+        }
 
         $controller = $input->getOption('controller');
         if (!$controller) {
@@ -76,7 +79,7 @@ class CurlCommand extends OrmCommand
         }
 
         $tableInfo = $this->getTableInfo($tableName);
-        $info      = (new PgSqlToProto($tableInfo, $model, $controller))->gen();
+        $info      = (new MysqlToProto($tableInfo, $model, $controller))->gen();
 
         GoCurd::init();
         GoCurd::gen($tableName, $model, $controller, $info, $app, $doc);
@@ -86,15 +89,15 @@ class CurlCommand extends OrmCommand
 
     public function getTables(): array
     {
-        $sql = "SELECT * FROM pg_tables WHERE schemaname = 'public' order by tablename";
+        $sql = "select table_name from information_schema.tables where table_schema='".$this->config["dbname"]."'";
         $res = $this->query($sql);
         $got = $tows = [];
 
         $table = new Table($this->output);
         $i     = 1;
         foreach ($res as $data) {
-            $tows[]    = [$i, $data['tablename']];
-            $got[$i++] = $data['tablename'];
+            $tows[]    = [$i, $data['table_name']];
+            $got[$i++] = $data['table_name'];
         }
         $table
             ->setHeaders(array('id', 'table_name'))
