@@ -5,6 +5,7 @@ namespace App\Commands;
 
 
 use App\CurdHelp\GoCurd;
+use App\ProtoHelp\MysqlToProto;
 use App\ProtoHelp\PgSqlToProto;
 use ProtoParser\StringHelp;
 use Symfony\Component\Console\Command\Command;
@@ -15,7 +16,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
 
-class CurlCommand extends PgOrmCommand
+class CurlCommand extends OrmCommand
 {
     /** @var InputInterface */
     protected $input;
@@ -35,6 +36,7 @@ class CurlCommand extends PgOrmCommand
             ->addOption("model", "m", InputOption::VALUE_OPTIONAL, "生成的proto目录, 归属模块名称")
             ->addOption("controller", "c", InputOption::VALUE_OPTIONAL, "控制器名称")
             ->addOption("app", "a", InputOption::VALUE_OPTIONAL, "app", 'admin')
+            ->addOption("doc", "", InputOption::VALUE_OPTIONAL, "备注", '')
             ->setHelp("根据mysql结构生成go的curd基础文件");
     }
 
@@ -48,7 +50,7 @@ class CurlCommand extends PgOrmCommand
         $app       = $input->getOption('app');
         $tableName = $input->getOption('table');
         if (!$tableName) {
-            $tables    = $this->getTables();
+            $tables = $this->getTables();
             usleep(1);
             $question  = new Question('输入数据表名称ID: ');
             $tableName = $helper->ask($input, $output, $question);
@@ -59,12 +61,21 @@ class CurlCommand extends PgOrmCommand
 
         $model = $input->getOption('model');
         if (!$model) {
-            $question = new Question('输入代码放到哪个模块下(admin/? 输入问号部分): ');
+            $question = new Question('输入代码放到哪个模块下('.$app.'/? 输入问号部分): ');
             $model    = $helper->ask($input, $output, $question);
+            if (trim($model) == '') {
+                $model = '';
+            }
         }
 
-        $question = new Question('输入模块注释(中文说明): ');
-        $doc    = $helper->ask($input, $output, $question);
+        $doc = $input->getOption('doc');
+        if (!$doc) {
+            $question = new Question('输入模块注释(中文说明): ');
+            $doc = $helper->ask($input, $output, $question);
+            if (trim($doc) == '') {
+                $doc = $tableName;
+            }
+        }
 
         $controller = $input->getOption('controller');
         if (!$controller) {
@@ -76,7 +87,7 @@ class CurlCommand extends PgOrmCommand
         }
 
         $tableInfo = $this->getTableInfo($tableName);
-        $info      = (new PgSqlToProto($tableInfo, $model, $controller))->gen();
+        $info      = (new MysqlToProto($tableInfo, $model, $controller))->gen();
 
         GoCurd::init();
         GoCurd::gen($tableName, $model, $controller, $info, $app, $doc);
@@ -86,15 +97,15 @@ class CurlCommand extends PgOrmCommand
 
     public function getTables(): array
     {
-        $sql = "SELECT * FROM pg_tables WHERE schemaname = 'public' order by tablename";
+        $sql = "select table_name from information_schema.tables where table_schema='".$this->config["dbname"]."'";
         $res = $this->query($sql);
         $got = $tows = [];
 
         $table = new Table($this->output);
         $i     = 1;
         foreach ($res as $data) {
-            $tows[]    = [$i, $data['tablename']];
-            $got[$i++] = $data['tablename'];
+            $tows[]    = [$i, $data['table_name']];
+            $got[$i++] = $data['table_name'];
         }
         $table
             ->setHeaders(array('id', 'table_name'))
@@ -107,5 +118,40 @@ class CurlCommand extends PgOrmCommand
     {
         $name = StringHelp::toCamelCase($name);
         return ucfirst($name);
+    }
+
+    public function getTableInfo(string $tableName): array
+    {
+        $dbInfo = $this->getTableDbInfo($tableName);
+
+        $info['name']   = $tableName;
+        $info['db']     = $this->config['dbname'];
+        $info['column'] = $dbInfo['column'];
+        $info['json']   = $this->json[$tableName] ?? [];
+
+        return $info;
+    }
+
+    public function getTableDbInfo(string $tableName): array
+    {
+        $sql   = "
+            SELECT
+                A.* 
+            FROM
+                INFORMATION_SCHEMA.COLUMNS A 
+            WHERE
+                A.TABLE_SCHEMA = '{$this->config['dbname']}' AND A.TABLE_NAME = '{$tableName}'
+            ORDER BY
+                A.TABLE_SCHEMA,
+                A.TABLE_NAME,
+                A.ORDINAL_POSITION
+            ";
+        $got   = [];
+        foreach ($this->query($sql) as $data) {
+            $got[$data['TABLE_NAME']]['name']                         = $data['TABLE_NAME'];
+            $got[$data['TABLE_NAME']]['db']                           = $data['TABLE_SCHEMA'];
+            $got[$data['TABLE_NAME']]['column'][$data['COLUMN_NAME']] = $data;
+        }
+        return end($got);
     }
 }

@@ -4,6 +4,7 @@
 namespace App\CurdHelp;
 
 
+use App\Go;
 use ProtoParser\StringHelp;
 
 class GoCurd
@@ -83,7 +84,7 @@ class GoCurd
                     9 => $app,
                     0 => $controller,
                     1 => self::toName($controller),
-                    2 => $model,
+                    2 => $model ?: $app,
                     3 => implode(",\n", $table_copy_api).',',
                     4 => $table_info_name,
                     5 => $table_orm,
@@ -110,6 +111,11 @@ class GoCurd
             mkdir(HOME_PATH.'/protobuf/'.$app.'/'.$model, 0755, true);
         }
         if (!file_exists($fileSave)) {
+            $strProto = self::$orm['proto'];
+            if (!$model) {
+                $strProto = str_replace('{app}/{model}','{app}', $strProto);
+            }
+
             file_put_contents($fileSave, str_replace(
                 [
                     9  => '{app}',
@@ -121,19 +127,21 @@ class GoCurd
                     7  => '{proto_str}',
                     8  => '{table_name}',
                     10 => '{controller_doc}',
+                    11 => '{gomodule}',
                 ],
                 [
                     9  => $app,
                     0  => $controller,
                     1  => self::toName($controller),
-                    2  => $model,
+                    2  => $model ?: $app,
                     4  => $table_info_name,
                     5  => $table_orm,
                     7  => $protoStr,
                     8  => $tableName,
                     10 => $controller_doc,
+                    11 => Go::getModule(),
                 ],
-                self::$orm['proto']
+                $strProto
             ));
         }
     }
