@@ -2,7 +2,7 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	"zhongmeng.com/game-background/bootstrap/http/route_help"
+	"{gomodule}/bootstrap/http/route_help"
 )
 
 // @Bean

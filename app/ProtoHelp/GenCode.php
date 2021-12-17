@@ -161,9 +161,9 @@ class GenCode
         if ($route) {
             $route .= "\n\t";
         }
-        $search = ['{controller}', '{group_map}'];
+        $search = ['{controller}', '{group_map}', '{gomodule}'];
 
-        return str_replace($search, [$controllers, $route], self::$allRoutes);
+        return str_replace($search, [$controllers, $route, Go::getModule()], self::$allRoutes);
     }
 
     private static function getGroupName(string $group):string

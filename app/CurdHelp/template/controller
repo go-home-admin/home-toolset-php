@@ -1,6 +1,6 @@
 package {controller}
 
-import "zhongmeng.com/game-background/app/entity/game_background"
+import "{gomodule}/app/entity/game_background"
 
 // Controller @Bean
 // {controller_doc}
