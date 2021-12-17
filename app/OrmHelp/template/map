@@ -1,0 +1,16 @@
+func (l {name}List) MapWithOne(field string) map[interface{}]*{name} {
+	data := make(map[interface{}]*{name})
+	for _, item := range l {
+		switch field {{mapWithOneStr}
+		}
+	}
+	return data
+}
+
+func (l {name}List) MapWithMany(field string) map[interface{}][]*{name} {
+	data := make(map[interface{}][]*{name})
+	for _, item := range l {
+		switch field {{mapWithManyStr}}
+	}
+	return data
+}

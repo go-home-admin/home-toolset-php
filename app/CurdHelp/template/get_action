@@ -2,8 +2,8 @@ package {controller}
 
 import (
 	"github.com/gin-gonic/gin"
-	"{gomodule}/app/providers"
-	"{gomodule}/generate/proto/{app}/{model}"
+	"zhongmeng.com/game-background/app/providers"
+	"zhongmeng.com/game-background/generate/proto/{app}/{model}"
 )
 
 // Get  列表查询 - {controller_doc}

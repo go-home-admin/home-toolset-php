@@ -2,9 +2,9 @@ package {controller}
 
 import (
 	"github.com/gin-gonic/gin"
-	"{gomodule}/app/common"
-	"{gomodule}/app/providers"
-	"{gomodule}/generate/proto/{app}/{model}"
+	"zhongmeng.com/game-background/app/common"
+	"zhongmeng.com/game-background/app/providers"
+	"zhongmeng.com/game-background/generate/proto/{app}/{model}"
 )
 
 // Del  删除数据 - {controller_doc}

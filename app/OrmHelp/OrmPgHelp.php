@@ -7,7 +7,7 @@ namespace App\OrmHelp;
 use App\Go;
 use ProtoParser\StringHelp;
 
-class OrmHelp extends Mysql
+class OrmPgHelp
 {
     protected static $orm = [];
 
@@ -218,6 +218,63 @@ str;
                 $str .= "\n            {$dataStr2}";
         }
         return $str;
+    }
+
+    public static function getColumnKey(array $column): string
+    {
+        return $column['pkey'] ? 'primaryKey;' : '';
+    }
+
+    public static function getColumnNull(array $column): string
+    {
+        return $column['attnotnull'] == 't' ? ';not null' : '';
+    }
+
+    public static function getGoType(array $column, array &$impload): string
+    {
+        $type  = $column['type'];
+        $gom   = Go::getModule();
+        $point = $column['attnotnull'] == 't' ? '' : '*';
+
+        switch ($type) {
+            case 'integer':
+            case 'smallint':
+                $got = 'int32';
+                break;
+            case 'bigint':
+                $got = 'int64';
+                break;
+            case 'date':
+                $got                          = $point.'datatypes.Date';
+                $impload["gorm.io/datatypes"] = '"gorm.io/datatypes"';
+                break;
+            case 'json':
+            case 'jsonb':
+                $got              = $point.'pgtype.JSONB';
+                $impload["jsonb"] = '"'.$gom.'/app/common/pgtype"';
+                break;
+            default:
+                if (stripos($type, "timestamp") !== false) {
+                    if ($column['attname'] == 'deleted_at') {
+                        $got = $point."gorm.DeletedAt";
+                    } else {
+                        $got             = $point.'time.Time';
+                        $impload["time"] = '"'.$gom.'/app/common/time"';
+                    }
+                } elseif (stripos($type, "decimal") !== false || stripos($type, "numeric",) !== false) {
+                    $got = 'float32';
+                } else {
+                    $got = 'string';
+                }
+                break;
+        }
+        return $got;
+    }
+
+    public static function toName(string $name): string
+    {
+        $name = StringHelp::toCamelCase($name);
+        return ucfirst($name);
     }
 
     public static function getFieldStr($columns): string

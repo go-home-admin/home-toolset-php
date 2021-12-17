@@ -21,6 +21,7 @@ class OrmCommand extends Command
     /** @var OutputInterface */
     protected $output;
     protected $config = [];
+    protected $json = [];
 
     /**
      * @return \App\Commands\OrmCommand|void
@@ -104,7 +105,26 @@ class OrmCommand extends Command
             $got[$data['TABLE_NAME']]['db']                           = $data['TABLE_SCHEMA'];
             $got[$data['TABLE_NAME']]['column'][$data['COLUMN_NAME']] = $data;
         }
-        return $got;
+
+        $list = [];
+        foreach ($got as $tableName => $columnInfos) {
+            $info         = [];
+            $info['name'] = $tableName;
+            $info['db']   = $this->config['dbname'];
+            foreach ($columnInfos['column'] as $columnName => $columnInfo) {
+                $info['column'][$columnName] = $columnInfo;
+
+                $info['column'][$columnName]['attname']    = $columnName;
+                $info['column'][$columnName]['comment']    = $columnInfo['COLUMN_COMMENT'];
+                $info['column'][$columnName]['type']       = $columnInfo['DATA_TYPE'];
+                $info['column'][$columnName]['pkey']       = $columnInfo['COLUMN_KEY'] == 'PRI';
+                $info['column'][$columnName]['attnotnull'] = $columnInfo['IS_NULLABLE'] == 'NO';
+            }
+            $info['json']     = $this->json[$tableName] ?? [];
+            $list[$tableName] = $info;
+        }
+
+        return $list;
     }
 
     public function query(string $sql): array
@@ -137,7 +157,8 @@ class OrmCommand extends Command
         }
         $this->output->writeln("<info>使用配置文件 $path</info>");
         $this->config = parse_ini_file($path, true, INI_SCANNER_RAW);
-        foreach ($this->config as $value){
+        $this->json   = json_decode(@file_get_contents($path.'.json') ?: '{}', true);
+        foreach ($this->config as $value) {
             if (is_array($value)) {
                 $this->config = $value;
                 break;

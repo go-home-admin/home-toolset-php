@@ -5,7 +5,7 @@ package {model};
 
 import "http_config.proto";
 
-option go_package = "{gomodule}/generate/proto/{app}/{model}";
+option go_package = "zhongmeng.com/game-background/generate/proto/{app}/{model}";
 
 // {controller_doc}资源控制器
 service {controller_name} {

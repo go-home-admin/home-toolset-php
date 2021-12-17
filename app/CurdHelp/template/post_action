@@ -3,9 +3,9 @@ package {controller}
 import (
     "errors"
 	"github.com/gin-gonic/gin"
-	"{gomodule}/app/common"
-	"{gomodule}/app/providers"
-	"{gomodule}/generate/proto/{app}/{model}"
+	"zhongmeng.com/game-background/app/common"
+	"zhongmeng.com/game-background/app/providers"
+	"zhongmeng.com/game-background/generate/proto/{app}/{model}"
 )
 
 // Post  创建新数据 - {controller_doc}

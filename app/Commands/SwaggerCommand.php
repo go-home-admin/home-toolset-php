@@ -66,9 +66,10 @@ class SwaggerCommand extends ProtocCommand
         $routeConfig  = $this->loadRouteConfig();
         $moduleReadme = $this->loadRouteModuleReadme($protocPaths);
 
-        $swagger      = $this->makeSwagger();
-        $moduleReadme = $this->setSwaggerPath($parser, $swagger, $routeService, $routeConfig, $moduleReadme);
-        $this->setSwaggerMessage($parser, $swagger);
+        $swagger = $this->makeSwagger();
+        $arrTemp = $this->setSwaggerPath($parser, $swagger, $routeService, $routeConfig, $moduleReadme);
+        list($moduleReadme, $messageToUrl) = $arrTemp;
+        $this->setSwaggerMessage($parser, $swagger, $messageToUrl);
         $this->setSwaggerEnum($parser, $swagger);
         $this->setSwaggerTags($parser, $swagger, $moduleReadme);
 
@@ -108,7 +109,7 @@ class SwaggerCommand extends ProtocCommand
     }
 
     // 所有message
-    protected function setSwaggerMessage(ProtoParser $parser, Swagger $swagger)
+    protected function setSwaggerMessage(ProtoParser $parser, Swagger $swagger, array $messageToUrl)
     {
         foreach ($parser->getMessageWithAll() as $arr) {
             /** @var \ProtoParser\FileParser\Message\Message $message */
@@ -116,6 +117,17 @@ class SwaggerCommand extends ProtocCommand
             $messageName = $this->toModuleName($packageName, $message->getName());
             $message->setName($messageName);
             $definition = $this->toDefinition($packageName, $message, $swagger);
+
+            if (isset($messageToUrl[$messageName])) {
+                $description = '';
+                foreach ($messageToUrl[$messageName] as $method=>$urls){
+                    foreach ($urls as $url){
+                        $description .= "{$method} $url\n";
+                    }
+                }
+                $definition->setDescription($description . $definition->getDescription());
+            }
+
             $swagger->addDefinition($definition);
         }
     }
@@ -140,7 +152,7 @@ class SwaggerCommand extends ProtocCommand
         array $routeConfig,
         array $moduleReadme
     ): array {
-        $useModuleReadme = [];
+        $useModuleReadme = $messageToUrl = [];
         foreach ($routeService as $routeModule => $arr) {
             foreach ($arr as $routeGroup => $routeInfoArr) {
                 if (!isset($routeConfig[$routeGroup])) {
@@ -168,9 +180,10 @@ dd
 
                 foreach ($routeInfoArr as $routeInfo) {
                     /** @var \ProtoParser\FileParser\Service\Rpc $rpc */
-                    $rpc    = $routeInfo["rpc"];
-                    $url    = $routeInfo["url"];
-                    $method = $routeInfo["method"];
+                    $rpc     = $routeInfo["rpc"];
+                    $url     = $routeInfo["url"];
+                    $method  = $routeInfo["method"];
+                    $baseDir = $routeInfo["dir"];
 
                     $path = new Path();
                     $path->setSummary(explode("//", $rpc->getDoc())[0]);
@@ -182,11 +195,16 @@ dd
                     } else {
                         $path->setDescription($url);
                     }
-                    $path->setTags([$routeModule => $prefix]);
+                    $tags = [];
+                    foreach ($baseDir as $protoDir){
+                        $tags[$protoDir] = $prefix;
+                    }
+                    array_pop($tags);
+                    $path->setTags($tags);
                     $useModuleReadme[$routeModule] = $moduleReadme[$routeModule];
 
                     $message = $parser->getMessageWithAll($rpc->getParameter());
-                    if ($message){
+                    if ($message) {
                         switch ($method) {
                             case "post":
                                 $parameters = $this->toPostParameter($routeModule, $message);
@@ -196,10 +214,11 @@ dd
                                 break;
                         }
                         $path->setParameters($parameters);
+                        $messageToUrl[$this->toModuleName($routeModule, $message->getName())][$method][] = $path->getKey();
                     }
 
-                    $message   = $parser->getMessageWithAll($rpc->getResponse());
-                    if ($message){
+                    $message = $parser->getMessageWithAll($rpc->getResponse());
+                    if ($message) {
                         $responses = $this->toResponse($routeModule, $message);
                         $path->setResponses(['200' => $responses]);
                     }
@@ -212,7 +231,7 @@ dd
                 }
             }
         }
-        return $useModuleReadme;
+        return [$useModuleReadme, $messageToUrl];
     }
 
     protected function loadRouteModuleReadme(array $dirs): array
@@ -258,6 +277,9 @@ dd
             if (!$services) {
                 continue;
             }
+            $fileArr = explode(HOME_PATH . '/protobuf/', $proto->file);
+            $fileArr = end($fileArr);
+            $fileArr = explode('/', $fileArr);
 
             $routeModule = $proto->getPackage()->getValue();
             foreach ($services->getArray() as $service) {
@@ -272,7 +294,8 @@ dd
                                     $all[$routeModule][$optionValue->getValue()][] = [
                                         'url'    => $rpcUrl,
                                         'method' => strtolower(substr($rpcOptionKey, 5)),
-                                        'rpc'    => $rpc
+                                        'rpc'    => $rpc,
+                                        'dir'    => $fileArr
                                     ];
                                 }
                             }
@@ -312,7 +335,7 @@ dd
         $allDef = $arr['definitions'] ?? [];
         foreach ($allDef as $k => $item) {
             if (isset($item['properties'])) {
-                foreach ($item['properties'] as $pk=>$property) {
+                foreach ($item['properties'] as $pk => $property) {
                     if (isset($property['$ref'])) {
                         $ref     = $property['$ref'];
                         $refArr  = explode('/', $ref);
@@ -324,7 +347,8 @@ dd
                             if (!isset($allDef[$kf])) {
                                 throw new \Exception("无法找到对应的结构对象. ".$defTemp);
                             } else {
-                                $arr['definitions'][$k]['properties'][$pk]['$ref'] = str_replace(["/{$defTemp}"], ["/{$kf}"], $ref);
+                                $arr['definitions'][$k]['properties'][$pk]['$ref'] = str_replace(["/{$defTemp}"],
+                                    ["/{$kf}"], $ref);
                             }
                         }
                     }
@@ -476,7 +500,7 @@ dd
         return $definition;
     }
 
-    protected function toDoc(string $doc):string
+    protected function toDoc(string $doc): string
     {
         return str_replace(['//'], ["<br>"], $doc);
     }

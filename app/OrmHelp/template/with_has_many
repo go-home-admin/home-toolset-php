@@ -1,10 +1,14 @@
-func (receiver *{name}) With{FuncName}() *{name} {
+func (receiver *{name}) With{FuncName}(wheres ...interface{}) *{name} {
 	con := receiver.Model()
 	con.wheresSession = append(con.wheresSession, func() {
 		con.{other} = make([]*{other_orm}, 0)
 		ids := con.list.GetTo{source_key}Distinct()
 		if len(ids) > 0 {
-			others := InitializeNew{other_orm}Provider().WhereIn("{other_key}", ids).Find()
+			otherOrm := New{other_orm}().WhereIn("{other_key}", ids)
+			if len(wheres) >= 2 {
+			    otherOrm.Where(wheres[0], wheres[1:]...)
+			}
+			others := otherOrm.Find()
 			for _, source := range con.list {
 				for _, other := range others {
 					if other.{other_key_by_camel} == source.{source_key} {

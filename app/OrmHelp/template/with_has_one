@@ -1,22 +1,21 @@
 // 表依赖
-func (receiver *{name}) With{FuncName}() *{name} {
+func (receiver *{name}) With{FuncName}(wheres ...interface{}) *{name} {
 	con := receiver.Model()
 	con.wheresSession = append(con.wheresSession, func() {
-		con.{other} = &{other_orm}{}
 		ids := con.list.GetTo{source_key}Distinct()
 		if len(ids) > 0 {
-			others := con.{other}.WhereIn("{other_key}", ids).Find()
-			mapOthers := make(map[{source_type}]*{other_orm})
-			for _, other := range others {
-				mapOthers[other.{other_key_by_camel}] = other
-			}
-			for _, source := range con.list {
-				v, ok := mapOthers[source.{source_key}]
-				if ok {
-					source.{other} = v
-				}
-			}
-		}
+            otherOrm := New{other_orm}().WhereIn("{other_key}", ids)
+            if len(wheres) >= 2 {
+                otherOrm.Where(wheres[0], wheres[1:]...)
+            }
+            others := otherOrm.Find().MapWithOne("{other_key}")
+            for _, source := range con.list {
+                v, ok := others[source.{source_key}]
+                if ok {
+                    source.{other} = v
+                }
+            }
+        }
 	})
 	return con
 }

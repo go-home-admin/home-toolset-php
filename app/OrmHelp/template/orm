@@ -1,6 +1,7 @@
 package {package}
 
 import (
+	"context"
     log "github.com/sirupsen/logrus"
     "gorm.io/gorm"{import})
 
@@ -12,10 +13,10 @@ type {name} struct {
 	wheresSession []func()   // 条件格式组装
 }
 
-var {name}Field = struct {field}
+var {name}Fields = struct {field}
 // 空函数，防止上面的字段映射因未调用而报错
 func _() {
-	_ = {name}Field
+	_ = {name}Fields
 }
 
 type {name}List []*{name}
@@ -56,7 +57,7 @@ func (receiver *{name}) Create(value *{name}) *gorm.DB {
 
 func (receiver *{name}) Save() *gorm.DB {
 	con := receiver.Model()
-	return con.db.Save(con)
+	return con.db.Save(receiver)
 }
 
 func (receiver *{name}) Update(column string, value interface{}) *gorm.DB {
@@ -86,9 +87,9 @@ func (receiver *{name}) Where(query interface{}, args ...interface{}) *{name} {
 	return con
 }
 
-func (receiver *{name}) WhereIn(query string, args ...interface{}) *{name} {
+func (receiver *{name}) WhereIn(query string, args interface{}) *{name} {
 	con := receiver.Model()
-	con.db.Where(query + " IN (?)", args...)
+	con.db.Where(query + " IN ?", args)
 	return con
 }
 
@@ -149,6 +150,13 @@ func (receiver *{name}) First(conds ...interface{}) *{name} {
 	return data
 }
 
+func (receiver *{name}) Has() bool {
+	if receiver!=nil && receiver.Id != 0 {
+    	return true
+    }
+    return false
+}
+
 func (receiver *{name}) And(fuc func(table *{name})) *{name} {
 	fuc(receiver)
 	con := receiver.Model()
@@ -191,4 +199,10 @@ func (receiver *{name}) GetPaginate(page uint32, limit uint32) ({name}List, int6
 	// 查询不到数据时候
 	receiver.list = make([]*{name}, 0)
 	return receiver.Find(), total
+}
+// 如果中断继承条件, 需要新的对象, 但是调用CloneOrm前的条件还是继承的
+func (receiver *{name}) CloneOrm() *{name} {
+	con := receiver.Model()
+	db := con.db.WithContext(context.Background())
+	return New{name}(db)
 }
