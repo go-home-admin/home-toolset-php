@@ -2,6 +2,7 @@ package {controller}
 
 import (
 	"github.com/gin-gonic/gin"
+	"{gomodule}/app/common/auth"
 	"{gomodule}/app/providers"
 	"{gomodule}/generate/proto/{app}/{model}"
 )

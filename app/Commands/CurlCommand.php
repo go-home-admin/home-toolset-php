@@ -90,7 +90,7 @@ class CurlCommand extends OrmCommand
         $info      = (new MysqlToProto($tableInfo, $model, $controller))->gen();
 
         GoCurd::init();
-        GoCurd::gen($tableName, $model, $controller, $info, $app, $doc);
+        GoCurd::gen([$this->config["dbname"], $tableName], $model, $controller, $info, $app, $doc);
 
         return 0;
     }

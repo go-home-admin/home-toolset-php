@@ -3,14 +3,14 @@ package {controller}
 import (
     "errors"
 	"github.com/gin-gonic/gin"
-	"{gomodule}/app/common"
+	"{gomodule}/app/common/auth"
 	"{gomodule}/app/providers"
 	"{gomodule}/generate/proto/{app}/{model}"
 )
 
 // Post  创建新数据 - {controller_doc}
 func (receiver *Controller) Post(req *{model}.{controller_name}PostRequest, ctx *auth.Context) (*{model}.{controller_name}PostResponse, error) {
-    id := int32(common.GetParamId(ctx))
+    id := ctx.GetParamId()
 	has := receiver.orm.WhereId(id).First()
 	if has == nil {
 		return nil, errors.New("数据不存在")

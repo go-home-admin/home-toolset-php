@@ -39,13 +39,15 @@ class GoCurd
      * ];
      */
     public static function gen(
-        string $tableName,
+        array $tableInfo,
         string $model,
         string $controller,
         array $info,
         string $app = 'admin',
         string $controller_doc = ''
     ) {
+        $dbName = $tableInfo[0];
+        $tableName = $tableInfo[1];
         $table_info_name = self::toName($tableName)."Info";
         $table_orm       = "Orm".self::toName($tableName);
 
@@ -67,6 +69,9 @@ class GoCurd
             } elseif (in_array($fileName, ['proto'])) {
                 continue;
             }
+            if (!$model) {
+                $fileStr = str_replace('{app}/{model}','{app}', $fileStr);
+            }
             $str = str_replace(
                 [
                     9 => '{app}',
@@ -79,6 +84,8 @@ class GoCurd
                     6 => '{table_name}',
                     7 => '{update_str}',
                     8 => '{controller_doc}',
+                    11 => '{gomodule}',
+                    12 => '{dn_name}',
                 ],
                 [
                     9 => $app,
@@ -91,6 +98,8 @@ class GoCurd
                     6 => implode(",\n", $table_copy_api).',',
                     7 => '',
                     8 => $controller_doc,
+                    11 => Go::getModule(),
+                    12 => $dbName,
                 ],
                 $fileStr
             );

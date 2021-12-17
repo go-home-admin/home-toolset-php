@@ -2,14 +2,14 @@ package {controller}
 
 import (
 	"github.com/gin-gonic/gin"
-	"{gomodule}/app/common"
+	"{gomodule}/app/common/auth"
 	"{gomodule}/app/providers"
 	"{gomodule}/generate/proto/{app}/{model}"
 )
 
 // Del  删除数据 - {controller_doc}
 func (receiver *Controller) Del(req *{model}.{controller_name}PutRequest, ctx *auth.Context) (*{model}.{controller_name}PutResponse, error) {
-	id := common.GetParamId(ctx)
+	id := ctx.GetParamId()
     receiver.orm.Delete(id)
 	return &{model}.{controller_name}PutResponse{
 		Tip: "OK",
