@@ -305,7 +305,7 @@ class ProtocCommand extends Command
                 $run         = [];
                 if ($fileJsonExt || $typeJsonExt || $attrJsonExt) {
                     foreach ($attribute->getTags() as $name => $tag) {
-                        if ($name === 'protobuf') {
+                        if (in_array($name, ['protobuf', "protobuf_oneof"])) {
                             $old = $new = $name.':"'.$tag.'"';
                             foreach ([$attrJsonExt, $typeJsonExt, $fileJsonExt] as $exts) {
                                 foreach ($exts as $ext) {
